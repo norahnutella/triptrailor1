@@ -1,3 +1,17 @@
+/**
+ * DASHBOARD VIEW
+ * =========================================================================
+ * Purpose:
+ *   The primary control desk for the user after sign-in.
+ *   Provides:
+ *   - Quick destination search bar
+ *   - Active pod trips (Goa, Kyoto) with completeness indicators
+ *   - Dynamic flight oracle insights
+ *   - Inspiration vault & saved places wishlist with pin/unpin toggles
+ *   - Live collaborative group activity feed
+ * =========================================================================
+ */
+
 import React, { useState } from 'react';
 import {
   Sparkles,
@@ -18,37 +32,67 @@ import {
   MessageSquare,
   ThumbsUp,
 } from 'lucide-react';
-import { ViewScreen } from '../types';
+import { ViewScreen, UserProfile } from '../types';
 import { RECENT_DESTINATIONS, SAVED_PLACES } from '../data/mockData';
 
 interface DashboardViewProps {
   onNavigate: (screen: ViewScreen) => void;
   onOpenConcierge: () => void;
+  user?: UserProfile | null;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpenConcierge }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  onNavigate,
+  onOpenConcierge,
+  user,
+}) => {
   const [destinationInput, setDestinationInput] = useState('Kyoto, Japan');
   const [datesInput, setDatesInput] = useState('18 Nov – 24 Nov');
   const [pinnedPlaces, setPinnedPlaces] = useState<string[]>(['sp-1', 'sp-2', 'sp-3', 'sp-4']);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  const displayName = user ? user.name.split(' ')[0] : 'Explorer';
+  const roleTitle = user?.role || 'Trip Lead';
+
+  const showToast = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const togglePin = (id: string) => {
     if (pinnedPlaces.includes(id)) {
       setPinnedPlaces(pinnedPlaces.filter((p) => p !== id));
+      showToast('Removed place from saved wishlist.');
     } else {
       setPinnedPlaces([...pinnedPlaces, id]);
+      showToast('Saved place to your travel wishlist!');
     }
   };
 
   return (
     <div id="dashboard-view" className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Non-blocking feedback notification banner */}
+      {notification && (
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+          <Check className="w-4 h-4 text-emerald-400" />
+          <span>{notification}</span>
+        </div>
+      )}
+
       {/* Top Greeting & Search Header */}
+
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-widest text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200/60 inline-block mb-1.5">
-            Curated Exploration Desk
-          </span>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200/60 inline-block">
+              Curated Exploration Desk
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200/60">
+              {roleTitle}
+            </span>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            Good morning, Elena <span className="inline-block animate-wave origin-[70%_70%]">👋</span>
+            Good morning, {displayName} <span className="inline-block animate-wave origin-[70%_70%]">👋</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
             Where are you planning to go next? Your travel pod has 3 pending itinerary suggestions.
@@ -339,8 +383,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpen
                   <span>View Itinerary</span>
                 </button>
                 <button
-                  onClick={() => alert('Kyoto itinerary exported as PDF with synchronized train timetables and voucher barcodes!')}
-                  className="w-full py-2.5 bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-800 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                  onClick={() => showToast('Kyoto itinerary exported as PDF with synchronized train timetables!')}
+                  className="w-full py-2.5 bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-800 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5 text-slate-500" />
                   <span>Export PDF</span>

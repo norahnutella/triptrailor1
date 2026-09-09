@@ -18,13 +18,21 @@ import {
   Heart,
   ExternalLink,
 } from 'lucide-react';
-import { ViewScreen } from '../types';
+import { ViewScreen, UserProfile } from '../types';
 
 interface LandingViewProps {
   onNavigate: (screen: ViewScreen) => void;
+  user?: UserProfile | null;
+  onOpenAuth?: (mode: 'login' | 'signup') => void;
+  onLogout?: () => void;
 }
 
-export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
+export const LandingView: React.FC<LandingViewProps> = ({
+  onNavigate,
+  user,
+  onOpenAuth,
+  onLogout,
+}) => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -52,7 +60,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
         </div>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-          <button onClick={() => onNavigate('landing')} className="text-slate-900 font-bold hover:text-orange-600 transition-colors">
+          <button onClick={() => onNavigate('landing')} className="text-slate-900 font-bold hover:text-orange-600 transition-colors cursor-pointer">
             Home
           </button>
           <a href="#features" className="hover:text-orange-600 transition-colors">Features</a>
@@ -60,25 +68,51 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <a href="#pricing" className="hover:text-orange-600 transition-colors">Pricing</a>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onNavigate('dashboard')}
-            className="hidden sm:inline-flex text-xs font-bold text-slate-700 hover:text-slate-900 px-3 py-1.5"
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => onNavigate('create')}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs"
-          >
-            Plan My Trip
-          </button>
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
-            alt="User avatar"
-            onClick={() => onNavigate('dashboard')}
-            className="w-8 h-8 rounded-full object-cover ring-2 ring-white cursor-pointer"
-          />
+        <div className="flex items-center gap-2.5">
+          {user ? (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onNavigate('dashboard')}
+                className="text-xs font-bold text-slate-700 hover:text-slate-900 px-3 py-1.5 cursor-pointer hidden sm:inline-block"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => onNavigate('create')}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                Plan My Trip
+              </button>
+              <div
+                onClick={() => onNavigate('dashboard')}
+                className="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer group"
+              >
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-xs"
+                />
+                <span className="hidden lg:inline-block text-xs font-bold text-slate-800 group-hover:text-orange-600 transition-colors">
+                  {user.name.split(' ')[0]}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onOpenAuth?.('login')}
+                className="px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => onOpenAuth?.('signup')}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                Sign Up Free
+              </button>
+            </div>
+          )}
         </div>
       </header>
 

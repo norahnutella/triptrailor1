@@ -1,3 +1,21 @@
+/**
+ * ITINERARY VIEW
+ * =========================================================================
+ * Purpose:
+ *   Comprehensive day-by-day travel plan showing interactive timeline cards,
+ *   real-time collaborative pod activity, live expense balance tracking,
+ *   and route map synchronization.
+ * 
+ * Key State:
+ *   - selectedDayIndex: Active tab (Day 1, Day 2, Day 3, Day 4)
+ *   - activeStop: Synchronized waypoint highlighted on the interactive map
+ *   - chatMessages: Live notes & suggestions dropped by pod members
+ *   - aiSuggestionAccepted / aiSuggestionDismissed: Assistant optimization toggle
+ *   - votes: Collaborator votes per activity card
+ *   - feedbackMsg: Non-blocking inline banner for export / share actions
+ * =========================================================================
+ */
+
 import React, { useState } from 'react';
 import {
   Sparkles,
@@ -60,6 +78,10 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [newNote, setNewNote] = useState('');
   const [aiSuggestionDismissed, setAiSuggestionDismissed] = useState(false);
   const [aiSuggestionAccepted, setAiSuggestionAccepted] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+  const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
+  const [tempTimeVal, setTempTimeVal] = useState('');
+
   const [votes, setVotes] = useState<Record<string, number>>({
     'act-1': 4,
     'act-2': 3,
@@ -67,6 +89,11 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     'act-4': 3,
     'act-5': 4,
   });
+
+  const showNotification = (msg: string) => {
+    setFeedbackMsg(msg);
+    setTimeout(() => setFeedbackMsg(null), 3000);
+  };
 
   const handleVote = (actId: string) => {
     setVotes((prev) => ({
@@ -111,14 +138,31 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     }
   };
 
+  const saveEditedTime = (actId: string) => {
+    if (tempTimeVal.trim()) {
+      setActivitiesList((prev) =>
+        prev.map((a) => (a.id === actId ? { ...a, time: tempTimeVal.trim() } : a))
+      );
+    }
+    setEditingTimeId(null);
+  };
+
   const currentDay = INITIAL_DAYS[selectedDayIndex];
 
   return (
     <div id="itinerary-view" className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* Non-blocking feedback notification banner */}
+      {feedbackMsg && (
+        <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+          <Check className="w-4 h-4 text-emerald-400" />
+          <span>{feedbackMsg}</span>
+        </div>
+      )}
+
       {/* Top Breadcrumb & Pod Collaborators Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <button onClick={() => onNavigate('dashboard')} className="hover:text-slate-900 transition-colors">
+          <button onClick={() => onNavigate('dashboard')} className="hover:text-slate-900 transition-colors cursor-pointer">
             My Trips
           </button>
           <span>&gt;</span>
@@ -158,7 +202,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
           <button
             onClick={onOpenInvite}
-            className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <Users className="w-3.5 h-3.5" />
             <span>Invite</span>
@@ -167,17 +211,17 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           <button
             onClick={() => {
               navigator.clipboard?.writeText(window.location.href);
-              alert('Itinerary link copied to clipboard!');
+              showNotification('Itinerary link copied to clipboard!');
             }}
-            className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>Share</span>
           </button>
 
           <button
-            onClick={() => alert('Exporting full 4-day Goa Adventure itinerary PDF with QR codes and flight vouchers...')}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs"
+            onClick={() => showNotification('Exporting full 4-day Goa Adventure itinerary PDF...')}
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export PDF</span>
@@ -192,7 +236,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           <div className="lg:col-span-7 space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-[11px] font-bold text-teal-800">
               <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-              <span>HIGH CONFIDENCE (96% MATCH) • CURATED BY TRIPTAILOR AI V4.2</span>
+              <span>HIGH CONFIDENCE (96% MATCH) • CURATED BY TRIPTAILOR AI</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
@@ -271,7 +315,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               <span className="text-slate-600">₹4,450 / person est.</span>
               <button
                 onClick={onOpenBill}
-                className="text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 hover:underline"
+                className="text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 hover:underline cursor-pointer"
               >
                 <span>Detailed Bill</span>
                 <span>→</span>
@@ -289,7 +333,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             <button
               key={day.dayNumber}
               onClick={() => setSelectedDayIndex(idx)}
-              className={`px-4 py-2.5 rounded-full whitespace-nowrap transition-all flex items-center gap-2 shadow-2xs ${
+              className={`px-4 py-2.5 rounded-full whitespace-nowrap transition-all flex items-center gap-2 shadow-2xs cursor-pointer ${
                 isActive
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
@@ -322,7 +366,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
               <button
                 onClick={handleAcceptOptimization}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-teal-700 flex items-center gap-1"
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-teal-700 flex items-center gap-1 cursor-pointer"
                 title="Auto-optimize schedule"
               >
                 <Sparkles className="w-4 h-4" />
@@ -341,7 +385,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 {/* Activity Card */}
                 <div
                   onClick={() => setActiveStop(idx + 1)}
-                  className={`bg-white rounded-2xl border p-4 sm:p-5 transition-all shadow-2xs hover:shadow-xs relative ${
+                  className={`bg-white rounded-2xl border p-4 sm:p-5 transition-all shadow-2xs hover:shadow-xs relative cursor-pointer ${
                     activeStop === idx + 1
                       ? 'border-slate-400 ring-2 ring-slate-900/10'
                       : 'border-slate-200/90'
@@ -429,7 +473,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                               e.stopPropagation();
                               handleVote(activity.id);
                             }}
-                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1 text-[11px]"
+                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1 text-[11px] cursor-pointer"
                             title="Vote for this activity"
                           >
                             <ThumbsUp className="w-3 h-3 text-orange-600" />
@@ -443,36 +487,49 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                                 e.stopPropagation();
                                 onOpenReserve(activity.title);
                               }}
-                              className="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors flex items-center gap-1"
+                              className="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl text-xs shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
                             >
                               <Utensils className="w-3 h-3" />
                               <span>Reserve Table</span>
                             </button>
                           )}
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const newTime = prompt('Enter new scheduled time:', activity.time);
-                              if (newTime) {
-                                setActivitiesList((prev) =>
-                                  prev.map((a) =>
-                                    a.id === activity.id ? { ...a, time: newTime } : a
-                                  )
-                                );
-                              }
-                            }}
-                            className="text-slate-600 hover:text-slate-900 font-semibold px-2 py-1"
-                          >
-                            Edit Time
-                          </button>
+                          {/* Inline Time Editor */}
+                          {editingTimeId === activity.id ? (
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="text"
+                                value={tempTimeVal}
+                                onChange={(e) => setTempTimeVal(e.target.value)}
+                                className="w-20 px-2 py-1 text-xs border rounded-lg bg-slate-50"
+                                placeholder="04:00 PM"
+                              />
+                              <button
+                                onClick={() => saveEditedTime(activity.id)}
+                                className="px-2 py-1 bg-slate-900 text-white rounded-lg text-xs font-bold"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTimeId(activity.id);
+                                setTempTimeVal(activity.time);
+                              }}
+                              className="text-slate-600 hover:text-slate-900 font-semibold px-2 py-1 cursor-pointer text-xs"
+                            >
+                              Edit Time
+                            </button>
+                          )}
 
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRemoveActivity(activity.id);
                             }}
-                            className="text-slate-400 hover:text-red-600 p-1"
+                            className="text-slate-400 hover:text-red-600 p-1 cursor-pointer"
                             title="Remove from itinerary"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -498,7 +555,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           <div className="pt-2">
             <button
               onClick={() => onOpenAddActivity(selectedDayIndex + 1)}
-              className="w-full py-3 bg-white hover:bg-slate-50 border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-center gap-2 transition-all shadow-2xs"
+              className="w-full py-3 bg-white hover:bg-slate-50 border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-center gap-2 transition-all shadow-2xs cursor-pointer"
             >
               <Plus className="w-4 h-4 text-slate-500" />
               <span>+ Add Activity to Day {selectedDayIndex + 1}</span>
@@ -541,13 +598,13 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     onClick={handleAcceptOptimization}
-                    className="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl transition-colors shadow-xs"
+                    className="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl transition-colors shadow-xs cursor-pointer"
                   >
                     Accept Adjustment
                   </button>
                   <button
                     onClick={() => setAiSuggestionDismissed(true)}
-                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl"
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl cursor-pointer"
                   >
                     Dismiss
                   </button>
@@ -635,7 +692,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               />
               <button
                 type="submit"
-                className="p-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors"
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors cursor-pointer"
                 aria-label="Send note"
               >
                 <Send className="w-3.5 h-3.5" />
@@ -647,3 +704,4 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     </div>
   );
 };
+

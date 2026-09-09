@@ -1,3 +1,16 @@
+/**
+ * APPLICATION MODALS
+ * =========================================================================
+ * Purpose:
+ *   Self-contained modal dialogs managed via the central activeModal state:
+ *   - InviteFriendsModal: Pod collaboration invite via link copy or email
+ *   - ReserveTableModal: Direct table hold and seating concierge for restaurants
+ *   - DetailedBillModal: Category expense breakdown & live squad split
+ *   - AddActivityModal: Timeline insertion for custom itinerary stops
+ *   - AiConciergeModal: Autonomous conversational travel assistant
+ * =========================================================================
+ */
+
 import React, { useState } from 'react';
 import {
   X,

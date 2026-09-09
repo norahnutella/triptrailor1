@@ -138,64 +138,45 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Hero Card: Start a New Tailored Journey */}
-      <div className="bg-gradient-to-br from-[#111C2D] via-[#152338] to-[#1E2E48] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div className="lg:col-span-8 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-[11px] font-bold text-teal-400">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>TAILORED ENGINE V3.4</span>
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Start a New Tailored Journey
-            </h2>
-
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              Let AI craft a high-fidelity, day-by-day routing with crowd-aware bookings, or invite your travel crew to co-create with real-time voting and split expenses.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <button
-                onClick={() => onNavigate('create')}
-                className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 transition-all shadow-md"
-              >
-                <span>Tailor a New Trip</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <span>or jump to:</span>
-                <button onClick={() => onNavigate('itinerary')} className="px-2 py-1 bg-slate-800/70 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">
-                  Goa ↗
-                </button>
-                <button onClick={() => onNavigate('create')} className="px-2 py-1 bg-slate-800/70 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">
-                  Kyoto ↗
-                </button>
-                <button onClick={() => onNavigate('create')} className="px-2 py-1 bg-slate-800/70 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">
-                  Amalfi Coast ↗
-                </button>
-                <button onClick={() => onNavigate('create')} className="px-2 py-1 bg-slate-800/70 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">
-                  Bali ↗
-                </button>
-              </div>
-            </div>
+      {/* Clean Welcome & Start Trip Card */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-6 sm:p-7 text-white shadow-md">
+        <div className="max-w-2xl space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Automatic Travel Planner</span>
           </div>
 
-          {/* Dynamic Flight Oracle Inset Card */}
-          <div className="lg:col-span-4 bg-slate-800/60 backdrop-blur-md rounded-2xl p-4 border border-slate-700/80 space-y-2.5">
-            <div className="flex items-center justify-between text-[11px] font-bold">
-              <span className="text-slate-300 uppercase tracking-wider">Dynamic Flight Oracle</span>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px]">
-                Optimal Window
-              </span>
-            </div>
-            <p className="text-xs text-slate-200 leading-relaxed font-medium">
-              Flights to Tokyo & Kansai regions are averaging <span className="text-emerald-400 font-bold">18% lower</span> for mid-November departures.
-            </p>
-            <div className="flex items-center gap-1.5 text-[11px] text-amber-300/90 pt-1 border-t border-slate-700/60">
-              <TrendingDown className="w-3.5 h-3.5 shrink-0" />
-              <span>Predicted fare rise in 48 hours for 4-passenger squads.</span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Where are you headed next?
+          </h2>
+
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Pick any destination and we will automatically find top attractions, dining spots, and build your collaborative day-by-day itinerary.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <button
+              onClick={() => onNavigate('create')}
+              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 transition-all shadow-md cursor-pointer"
+            >
+              <span>Create a New Trip</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
+              <span>Quick picks:</span>
+              <button onClick={() => onNavigate('itinerary')} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold cursor-pointer border border-slate-700">
+                🏖️ Goa
+              </button>
+              <button onClick={() => onNavigate('create')} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold cursor-pointer border border-slate-700">
+                ⛩️ Kyoto
+              </button>
+              <button onClick={() => onNavigate('create')} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold cursor-pointer border border-slate-700">
+                🌴 Bali
+              </button>
+              <button onClick={() => onNavigate('create')} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold cursor-pointer border border-slate-700">
+                🗼 Paris
+              </button>
             </div>
           </div>
         </div>

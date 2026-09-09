@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ViewScreen, ActivityItem, UserProfile, NotificationItem } from './types';
-import { INITIAL_DAY1_ACTIVITIES } from './data/mockData';
+import { ViewScreen, ActivityItem, UserProfile, NotificationItem, TripData } from './types';
+import { INITIAL_DAY1_ACTIVITIES, GOA_TRIP } from './data/mockData';
 import {
   getActiveUser,
   updateUserProfile,
@@ -51,7 +51,8 @@ export function App() {
   // 3. Collaborative In-App Notifications State
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => getNotifications());
 
-  // 4. Core Itinerary State: Dynamic timeline items
+  // 4. Core Itinerary State: Dynamic timeline items and active trip
+  const [currentTrip, setCurrentTrip] = useState<TripData>(GOA_TRIP);
   const [activities, setActivities] = useState<ActivityItem[]>(INITIAL_DAY1_ACTIVITIES);
 
   // 5. Unified Modal Manager State
@@ -63,6 +64,60 @@ export function App() {
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(null), 3400);
+  };
+
+  // Create Trip handler with dynamic places
+  const handleCreateItinerary = (tripData: {
+    destination: string;
+    dates: string;
+    activities: ActivityItem[];
+    travelers: number;
+    title: string;
+  }) => {
+    const destShort = tripData.destination.split(',')[0];
+    const newTrip: TripData = {
+      id: `trip-${Date.now()}`,
+      title: tripData.title,
+      destination: tripData.destination,
+      dates: tripData.dates,
+      daysCount: 4,
+      travelersCount: tripData.travelers,
+      budgetTotal: tripData.travelers * 4500,
+      budgetPerPerson: 4500,
+      budgetTier: 'Moderate',
+      tags: [destShort.toUpperCase(), 'AUTO-GENERATED', 'CURATED SPOTS'],
+      days: [
+        {
+          dayNumber: 1,
+          dateStr: `Day 1 • ${destShort} Highlights`,
+          title: `${destShort} Highlights`,
+          activities: tripData.activities.slice(0, 3),
+        },
+        {
+          dayNumber: 2,
+          dateStr: `Day 2 • Sights & Dining`,
+          title: `Sights & Dining`,
+          activities: tripData.activities.slice(3, 6).length > 0 ? tripData.activities.slice(3, 6) : tripData.activities.slice(0, 2),
+        },
+        {
+          dayNumber: 3,
+          dateStr: `Day 3 • Cultural Trail`,
+          title: `Cultural Exploration`,
+          activities: tripData.activities.slice(1, 3),
+        },
+        {
+          dayNumber: 4,
+          dateStr: `Day 4 • Farewell Sunset`,
+          title: `Sunset & Relaxation`,
+          activities: tripData.activities.slice(0, 2),
+        },
+      ],
+    };
+
+    setCurrentTrip(newTrip);
+    setActivities(tripData.activities.slice(0, 3));
+    setCurrentScreen('itinerary');
+    showToast(`Itinerary generated for ${tripData.destination}!`);
   };
 
   // Activity handlers
@@ -211,6 +266,7 @@ export function App() {
                 <TripCustomizerView
                   onNavigate={handleNavigate}
                   onOpenInvite={() => setModalState({ type: 'invite' })}
+                  onCreateItinerary={handleCreateItinerary}
                 />
               )}
 
@@ -223,6 +279,7 @@ export function App() {
                   onOpenAddActivity={(dayNumber) => setModalState({ type: 'addActivity', dayNumber })}
                   activitiesList={activities}
                   setActivitiesList={setActivities}
+                  currentTrip={currentTrip}
                 />
               )}
             </main>

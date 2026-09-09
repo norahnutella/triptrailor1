@@ -1,3 +1,25 @@
+/**
+ * APP ARCHITECTURE OVERVIEW (TripTailor)
+ * =========================================================================
+ * This root component is designed to be concise and easy to explain:
+ * 
+ * 1. Screen Router:
+ *    - 'currentScreen' switches between Marketing Landing and Workspace layout
+ *    - Screens: 'landing' | 'dashboard' | 'create' | 'itinerary'
+ * 
+ * 2. Shared Itinerary State:
+ *    - 'activities' stores the day's timeline (synced across timeline and map)
+ *    - Passed down to ItineraryView and Modals for seamless updates
+ * 
+ * 3. Unified Modal Manager:
+ *    - 'modalState' controls popups (invite, reserve table, bill split, etc.)
+ *    - A single clean state object replaces multiple boolean flags
+ * 
+ * 4. In-App Feedback:
+ *    - Non-blocking toast notification banner for user action confirmations
+ * =========================================================================
+ */
+
 import React, { useState } from 'react';
 import { ViewScreen, ActivityItem } from './types';
 import { INITIAL_DAY1_ACTIVITIES } from './data/mockData';
@@ -15,37 +37,38 @@ import {
   AiConciergeModal,
 } from './components/Modals';
 
-export function App() {
-  // Navigation State - Default to 'itinerary' (as in Image 7) or easy switcher
-  const [currentScreen, setCurrentScreen] = useState<ViewScreen>('itinerary');
+// Modal state union for type-safe dialog handling
+type ActiveModal =
+  | { type: 'invite' }
+  | { type: 'reserve'; restaurant: string }
+  | { type: 'bill' }
+  | { type: 'addActivity'; dayNumber: number }
+  | { type: 'concierge' }
+  | null;
 
-  // Mobile drawer state
+export function App() {
+  // 1. Navigation State: Default to 'itinerary' (active trip) or quick switcher
+  const [currentScreen, setCurrentScreen] = useState<ViewScreen>('itinerary');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Dynamic itinerary activities state
+  // 2. Core Itinerary State: Dynamic timeline items
   const [activities, setActivities] = useState<ActivityItem[]>(INITIAL_DAY1_ACTIVITIES);
 
-  // Modals state
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [isReserveOpen, setIsReserveOpen] = useState(false);
-  const [reserveRestaurant, setReserveRestaurant] = useState('Gunpowder / Fisherman\'s Wharf');
-  const [isBillOpen, setIsBillOpen] = useState(false);
-  const [isAddActivityOpen, setIsAddActivityOpen] = useState(false);
-  const [addDayNum, setAddDayNum] = useState(1);
-  const [isConciergeOpen, setIsConciergeOpen] = useState(false);
+  // 3. Unified Modal Manager State
+  const [modalState, setModalState] = useState<ActiveModal>(null);
 
-  const handleOpenReserve = (restaurant: string) => {
-    setReserveRestaurant(restaurant);
-    setIsReserveOpen(true);
+  // 4. In-App Notification Toast
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3200);
   };
 
-  const handleOpenAddActivity = (dayNum: number) => {
-    setAddDayNum(dayNum);
-    setIsAddActivityOpen(true);
-  };
-
+  // Activity handlers
   const handleAddActivity = (newAct: ActivityItem) => {
     setActivities((prev) => [...prev, newAct]);
+    showToast(`Added "${newAct.title}" to day itinerary!`);
   };
 
   const handleNavigate = (screen: ViewScreen) => {
@@ -56,72 +79,78 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#111C2D] font-sans flex flex-col antialiased selection:bg-orange-500/20">
-      {/* If currentScreen is 'landing', show full marketing page (Image 1) with direct links into workspace */}
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Screen 1: Full Marketing Landing Page */}
       {currentScreen === 'landing' ? (
         <LandingView onNavigate={handleNavigate} />
       ) : (
-        /* Workspace Layout (Image 3, 5, 7): Sidebar + Top Header + Main Content */
+        /* Workspace Shell: Sidebar + Top Navigation Header + Active View */
         <div className="flex-1 flex min-h-screen overflow-hidden">
           {/* Desktop Left Sidebar */}
           <Sidebar
             currentScreen={currentScreen}
             onNavigate={handleNavigate}
-            onOpenConcierge={() => setIsConciergeOpen(true)}
+            onOpenConcierge={() => setModalState({ type: 'concierge' })}
             className="hidden lg:flex"
           />
 
-          {/* Mobile Sidebar Overlay */}
+          {/* Mobile Sidebar Drawer */}
           {mobileSidebarOpen && (
             <div className="fixed inset-0 z-50 flex lg:hidden">
               <div
                 className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
                 onClick={() => setMobileSidebarOpen(false)}
-              ></div>
+              />
               <Sidebar
                 currentScreen={currentScreen}
                 onNavigate={handleNavigate}
                 onOpenConcierge={() => {
                   setMobileSidebarOpen(false);
-                  setIsConciergeOpen(true);
+                  setModalState({ type: 'concierge' });
                 }}
                 className="relative z-10 w-72 h-full"
               />
             </div>
           )}
 
-          {/* Right Main Column */}
+          {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-            {/* Top Navigation Bar */}
             <TopNav
               currentScreen={currentScreen}
               onNavigate={handleNavigate}
-              onOpenInvite={() => setIsInviteOpen(true)}
+              onOpenInvite={() => setModalState({ type: 'invite' })}
               onToggleSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
             />
 
-            {/* Main Content Area */}
             <main className="flex-1 p-4 sm:p-6 lg:p-8">
               {currentScreen === 'dashboard' && (
                 <DashboardView
                   onNavigate={handleNavigate}
-                  onOpenConcierge={() => setIsConciergeOpen(true)}
+                  onOpenConcierge={() => setModalState({ type: 'concierge' })}
                 />
               )}
 
               {currentScreen === 'create' && (
                 <TripCustomizerView
                   onNavigate={handleNavigate}
-                  onOpenInvite={() => setIsInviteOpen(true)}
+                  onOpenInvite={() => setModalState({ type: 'invite' })}
                 />
               )}
 
               {currentScreen === 'itinerary' && (
                 <ItineraryView
                   onNavigate={handleNavigate}
-                  onOpenInvite={() => setIsInviteOpen(true)}
-                  onOpenReserve={handleOpenReserve}
-                  onOpenBill={() => setIsBillOpen(true)}
-                  onOpenAddActivity={handleOpenAddActivity}
+                  onOpenInvite={() => setModalState({ type: 'invite' })}
+                  onOpenReserve={(restaurant) => setModalState({ type: 'reserve', restaurant })}
+                  onOpenBill={() => setModalState({ type: 'bill' })}
+                  onOpenAddActivity={(dayNumber) => setModalState({ type: 'addActivity', dayNumber })}
                   activitiesList={activities}
                   setActivitiesList={setActivities}
                 />
@@ -131,37 +160,36 @@ export function App() {
         </div>
       )}
 
-      {/* Reusable Functional Modals */}
+      {/* Centralized Modals */}
       <InviteFriendsModal
-        isOpen={isInviteOpen}
-        onClose={() => setIsInviteOpen(false)}
+        isOpen={modalState?.type === 'invite'}
+        onClose={() => setModalState(null)}
       />
 
       <ReserveTableModal
-        isOpen={isReserveOpen}
-        onClose={() => setIsReserveOpen(false)}
-        restaurantName={reserveRestaurant}
+        isOpen={modalState?.type === 'reserve'}
+        onClose={() => setModalState(null)}
+        restaurantName={modalState?.type === 'reserve' ? modalState.restaurant : ''}
       />
 
       <DetailedBillModal
-        isOpen={isBillOpen}
-        onClose={() => setIsBillOpen(false)}
+        isOpen={modalState?.type === 'bill'}
+        onClose={() => setModalState(null)}
       />
 
       <AddActivityModal
-        isOpen={isAddActivityOpen}
-        onClose={() => setIsAddActivityOpen(false)}
+        isOpen={modalState?.type === 'addActivity'}
+        onClose={() => setModalState(null)}
         onAddActivity={handleAddActivity}
-        dayNumber={addDayNum}
+        dayNumber={modalState?.type === 'addActivity' ? modalState.dayNumber : 1}
       />
 
       <AiConciergeModal
-        isOpen={isConciergeOpen}
-        onClose={() => setIsConciergeOpen(false)}
+        isOpen={modalState?.type === 'concierge'}
+        onClose={() => setModalState(null)}
         onApplySuggestion={(suggestion) => {
-          // If suggestion includes dining, add or update
-          alert(`Applied suggestion: "${suggestion}" to active plan!`);
-          setIsConciergeOpen(false);
+          showToast(`Applied AI suggestion: "${suggestion}"`);
+          setModalState(null);
           setCurrentScreen('itinerary');
         }}
       />
@@ -170,3 +198,4 @@ export function App() {
 }
 
 export default App;
+

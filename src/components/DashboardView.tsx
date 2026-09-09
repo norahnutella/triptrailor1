@@ -32,19 +32,27 @@ import {
   MessageSquare,
   ThumbsUp,
 } from 'lucide-react';
-import { ViewScreen } from '../types';
+import { ViewScreen, UserProfile } from '../types';
 import { RECENT_DESTINATIONS, SAVED_PLACES } from '../data/mockData';
 
 interface DashboardViewProps {
   onNavigate: (screen: ViewScreen) => void;
   onOpenConcierge: () => void;
+  user?: UserProfile | null;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpenConcierge }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  onNavigate,
+  onOpenConcierge,
+  user,
+}) => {
   const [destinationInput, setDestinationInput] = useState('Kyoto, Japan');
   const [datesInput, setDatesInput] = useState('18 Nov – 24 Nov');
   const [pinnedPlaces, setPinnedPlaces] = useState<string[]>(['sp-1', 'sp-2', 'sp-3', 'sp-4']);
   const [notification, setNotification] = useState<string | null>(null);
+
+  const displayName = user ? user.name.split(' ')[0] : 'Explorer';
+  const roleTitle = user?.role || 'Trip Lead';
 
   const showToast = (msg: string) => {
     setNotification(msg);
@@ -54,8 +62,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpen
   const togglePin = (id: string) => {
     if (pinnedPlaces.includes(id)) {
       setPinnedPlaces(pinnedPlaces.filter((p) => p !== id));
+      showToast('Removed place from saved wishlist.');
     } else {
       setPinnedPlaces([...pinnedPlaces, id]);
+      showToast('Saved place to your travel wishlist!');
     }
   };
 
@@ -73,11 +83,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpen
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-widest text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200/60 inline-block mb-1.5">
-            Curated Exploration Desk
-          </span>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200/60 inline-block">
+              Curated Exploration Desk
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200/60">
+              {roleTitle}
+            </span>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            Good morning, Elena <span className="inline-block animate-wave origin-[70%_70%]">👋</span>
+            Good morning, {displayName} <span className="inline-block animate-wave origin-[70%_70%]">👋</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
             Where are you planning to go next? Your travel pod has 3 pending itinerary suggestions.

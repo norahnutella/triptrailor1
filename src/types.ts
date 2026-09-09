@@ -83,3 +83,30 @@ export interface TripData {
   days: DayItinerary[];
 }
 
+// User Profile for Authentication & Account Settings
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  role: string;
+  bio?: string;
+  joinedDate?: string;
+  tripsCount: number;
+  savedPlacesCount: number;
+  currency: string;
+  travelPace: 'Relaxed' | 'Balanced' | 'Packed';
+  preferredCuisines?: string[];
+  isGuest?: boolean;
+}
+
+// In-app notifications
+export interface NotificationItem {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+  type: 'vote' | 'invite' | 'comment' | 'alert' | 'system';
+}
+

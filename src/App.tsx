@@ -1,34 +1,48 @@
 /**
  * APP ARCHITECTURE OVERVIEW (TripTailor)
  * =========================================================================
- * This root component is designed to be concise and easy to explain:
+ * Purpose:
+ *   Root orchestrator for TripTailor collaborative travel design suite.
+ *   
+ * Capabilities:
+ *   1. Screen Routing:
+ *      - 'landing': High-conversion marketing presentation & feature showcase
+ *      - 'dashboard': Exploration desk, flight trends, live squad feed, wishlist
+ *      - 'create': Interactive trip tailor wizard with budget & dining preferences
+ *      - 'itinerary': Day-by-day collaborative timeline, route map, pod voting
  * 
- * 1. Screen Router:
- *    - 'currentScreen' switches between Marketing Landing and Workspace layout
- *    - Screens: 'landing' | 'dashboard' | 'create' | 'itinerary'
+ *   2. Authentication & Squad Identity:
+ *      - Persistent user session with localStorage backup
+ *      - Modal-based Log In & Sign Up with demo account 1-click test drives
+ *      - Profile & travel pacing editor with avatar selector & currency switcher
+ *      - In-app collaborative notifications drawer
  * 
- * 2. Shared Itinerary State:
- *    - 'activities' stores the day's timeline (synced across timeline and map)
- *    - Passed down to ItineraryView and Modals for seamless updates
- * 
- * 3. Unified Modal Manager:
- *    - 'modalState' controls popups (invite, reserve table, bill split, etc.)
- *    - A single clean state object replaces multiple boolean flags
- * 
- * 4. In-App Feedback:
- *    - Non-blocking toast notification banner for user action confirmations
+ *   3. Shared State & Modals:
+ *      - Centralized modal union state for invitations, table holds, expense splits,
+ *        custom timeline additions, and AI Concierge assistance.
  * =========================================================================
  */
 
 import React, { useState } from 'react';
-import { ViewScreen, ActivityItem } from './types';
+import { ViewScreen, ActivityItem, UserProfile, NotificationItem } from './types';
 import { INITIAL_DAY1_ACTIVITIES } from './data/mockData';
+import {
+  getActiveUser,
+  updateUserProfile,
+  logoutUser,
+  setActiveUser,
+  getNotifications,
+  markNotificationsAsRead,
+  clearAllNotifications,
+} from './data/authStore';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { LandingView } from './components/LandingView';
 import { DashboardView } from './components/DashboardView';
 import { TripCustomizerView } from './components/TripCustomizerView';
 import { ItineraryView } from './components/ItineraryView';
+import { AuthModal } from './components/AuthModal';
+import { ProfileModal } from './components/ProfileModal';
 import {
   InviteFriendsModal,
   ReserveTableModal,
@@ -47,22 +61,33 @@ type ActiveModal =
   | null;
 
 export function App() {
-  // 1. Navigation State: Default to 'itinerary' (active trip) or quick switcher
+  // 1. Navigation State
   const [currentScreen, setCurrentScreen] = useState<ViewScreen>('itinerary');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // 2. Core Itinerary State: Dynamic timeline items
+  // 2. Authentication & User Profile State
+  const [user, setUser] = useState<UserProfile | null>(() => getActiveUser());
+  const [authModal, setAuthModal] = useState<{ isOpen: boolean; mode: 'login' | 'signup' }>({
+    isOpen: false,
+    mode: 'login',
+  });
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+
+  // 3. Collaborative In-App Notifications State
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => getNotifications());
+
+  // 4. Core Itinerary State: Dynamic timeline items
   const [activities, setActivities] = useState<ActivityItem[]>(INITIAL_DAY1_ACTIVITIES);
 
-  // 3. Unified Modal Manager State
+  // 5. Unified Modal Manager State
   const [modalState, setModalState] = useState<ActiveModal>(null);
 
-  // 4. In-App Notification Toast
+  // 6. In-App Notification Toast Banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (message: string) => {
     setToastMessage(message);
-    setTimeout(() => setToastMessage(null), 3200);
+    setTimeout(() => setToastMessage(null), 3400);
   };
 
   // Activity handlers
@@ -77,6 +102,49 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Auth Handlers
+  const handleAuthSuccess = (authenticatedUser: UserProfile, message: string) => {
+    setUser(authenticatedUser);
+    showToast(message);
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setUser(null);
+    showToast('Signed out of TripTailor.');
+  };
+
+  const handleUpdateUser = (updates: Partial<UserProfile>) => {
+    const updated = updateUserProfile(updates);
+    setUser(updated);
+    showToast('Profile & preferences saved!');
+  };
+
+  const handleSwitchUser = (newUser: UserProfile) => {
+    setActiveUser(newUser);
+    setUser(newUser);
+    showToast(`Switched account to ${newUser.name} (${newUser.role})`);
+  };
+
+  const handleMarkNotificationsRead = () => {
+    const updated = markNotificationsAsRead();
+    setNotifications(updated);
+    showToast('All notifications marked as read.');
+  };
+
+  const handleClearNotifications = () => {
+    const empty = clearAllNotifications();
+    setNotifications(empty);
+    showToast('Cleared notifications.');
+  };
+
+  const handleSearchSubmit = (term: string) => {
+    showToast(`Searching for "${term}" across itineraries & stays...`);
+    if (currentScreen !== 'dashboard' && currentScreen !== 'itinerary') {
+      setCurrentScreen('dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#111C2D] font-sans flex flex-col antialiased selection:bg-orange-500/20">
       {/* Toast Notification Banner */}
@@ -87,9 +155,14 @@ export function App() {
         </div>
       )}
 
-      {/* Screen 1: Full Marketing Landing Page */}
+      {/* Screen 1: Marketing Landing Page */}
       {currentScreen === 'landing' ? (
-        <LandingView onNavigate={handleNavigate} />
+        <LandingView
+          onNavigate={handleNavigate}
+          user={user}
+          onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
+          onLogout={handleLogout}
+        />
       ) : (
         /* Workspace Shell: Sidebar + Top Navigation Header + Active View */
         <div className="flex-1 flex min-h-screen overflow-hidden">
@@ -98,6 +171,9 @@ export function App() {
             currentScreen={currentScreen}
             onNavigate={handleNavigate}
             onOpenConcierge={() => setModalState({ type: 'concierge' })}
+            user={user}
+            onOpenProfile={() => setProfileModalOpen(true)}
+            onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
             className="hidden lg:flex"
           />
 
@@ -115,6 +191,15 @@ export function App() {
                   setMobileSidebarOpen(false);
                   setModalState({ type: 'concierge' });
                 }}
+                user={user}
+                onOpenProfile={() => {
+                  setMobileSidebarOpen(false);
+                  setProfileModalOpen(true);
+                }}
+                onOpenAuth={(mode) => {
+                  setMobileSidebarOpen(false);
+                  setAuthModal({ isOpen: true, mode });
+                }}
                 className="relative z-10 w-72 h-full"
               />
             </div>
@@ -127,6 +212,15 @@ export function App() {
               onNavigate={handleNavigate}
               onOpenInvite={() => setModalState({ type: 'invite' })}
               onToggleSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              user={user}
+              onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
+              onOpenProfile={() => setProfileModalOpen(true)}
+              onLogout={handleLogout}
+              onSwitchUser={handleSwitchUser}
+              notifications={notifications}
+              onMarkNotificationsRead={handleMarkNotificationsRead}
+              onClearNotifications={handleClearNotifications}
+              onSearchSubmit={handleSearchSubmit}
             />
 
             <main className="flex-1 p-4 sm:p-6 lg:p-8">
@@ -134,6 +228,7 @@ export function App() {
                 <DashboardView
                   onNavigate={handleNavigate}
                   onOpenConcierge={() => setModalState({ type: 'concierge' })}
+                  user={user}
                 />
               )}
 
@@ -160,7 +255,27 @@ export function App() {
         </div>
       )}
 
-      {/* Centralized Modals */}
+      {/* Authentication Modal: Log In & Sign Up */}
+      <AuthModal
+        isOpen={authModal.isOpen}
+        onClose={() => setAuthModal({ ...authModal, isOpen: false })}
+        initialMode={authModal.mode}
+        onSuccess={handleAuthSuccess}
+      />
+
+      {/* User Profile & Account Settings Modal */}
+      {user && (
+        <ProfileModal
+          isOpen={profileModalOpen}
+          onClose={() => setProfileModalOpen(false)}
+          user={user}
+          onUpdateUser={handleUpdateUser}
+          onLogout={handleLogout}
+          onSwitchUser={handleSwitchUser}
+        />
+      )}
+
+      {/* Centralized Workspace Modals */}
       <InviteFriendsModal
         isOpen={modalState?.type === 'invite'}
         onClose={() => setModalState(null)}
@@ -198,4 +313,3 @@ export function App() {
 }
 
 export default App;
-

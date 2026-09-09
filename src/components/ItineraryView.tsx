@@ -44,7 +44,7 @@ import {
   Camera,
   AlertCircle,
 } from 'lucide-react';
-import { ActivityItem, Collaborator, DayItinerary, PodMessage, ViewScreen } from '../types';
+import { ActivityItem, Collaborator, DayItinerary, PodMessage, ViewScreen, TripData } from '../types';
 import {
   GOA_TRIP,
   INITIAL_DAYS,
@@ -61,6 +61,7 @@ interface ItineraryViewProps {
   onOpenAddActivity: (dayNum: number) => void;
   activitiesList: ActivityItem[];
   setActivitiesList: React.Dispatch<React.SetStateAction<ActivityItem[]>>;
+  currentTrip?: TripData;
 }
 
 export const ItineraryView: React.FC<ItineraryViewProps> = ({
@@ -71,6 +72,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   onOpenAddActivity,
   activitiesList,
   setActivitiesList,
+  currentTrip,
 }) => {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [activeStop, setActiveStop] = useState(1);
@@ -81,6 +83,13 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
   const [tempTimeVal, setTempTimeVal] = useState('');
+
+  const daysData = currentTrip?.days || INITIAL_DAYS;
+  const currentDay = daysData[selectedDayIndex] || daysData[0];
+  const tripTitle = currentTrip?.title || 'Your Trip Itinerary';
+  const tripDestination = currentTrip?.destination || 'Goa, India';
+  const tripDates = currentTrip?.dates || '12 Oct – 15 Oct 2025';
+  const travelersCount = currentTrip?.travelersCount || 4;
 
   const [votes, setVotes] = useState<Record<string, number>>({
     'act-1': 4,
@@ -146,8 +155,6 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     }
     setEditingTimeId(null);
   };
-
-  const currentDay = INITIAL_DAYS[selectedDayIndex];
 
   return (
     <div id="itinerary-view" className="space-y-6 max-w-7xl mx-auto pb-16">
@@ -230,110 +237,65 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       </div>
 
       {/* Main Trip Plan Header Banner */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left info (7 cols) */}
-          <div className="lg:col-span-7 space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-[11px] font-bold text-teal-800">
-              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-              <span>HIGH CONFIDENCE (96% MATCH) • CURATED BY TRIPTAILOR AI</span>
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-[11px] font-bold text-orange-800">
+              <MapPin className="w-3 h-3 text-orange-600" />
+              <span>{tripDestination}</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              Your Goa Adventure
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              {tripTitle}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600">
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span>12 Oct — 15 Oct 2025</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-600">
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>{tripDates}</span>
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-slate-400" />
-                <span>4 Travelers</span>
+              <span className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-slate-400" />
+                <span>{travelersCount} Travelers</span>
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1.5">
-                <CreditCard className="w-4 h-4 text-slate-400" />
-                <span>₹20,000 Total Budget</span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span>{daysData.length} Days Planned</span>
               </span>
-            </div>
-
-            {/* Filter Tags */}
-            <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold">
-              <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">BEACH</span>
-              <span className="px-2.5 py-1 rounded-md bg-orange-100 text-orange-800">FOOD & SHACKS</span>
-              <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">ADVENTURE</span>
-              <span className="px-2.5 py-1 rounded-md bg-teal-50 text-teal-800">BALANCED PACING</span>
-              <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700">SCENIC DRIVES</span>
             </div>
           </div>
 
-          {/* Right Expense Tracker Box (5 cols) */}
-          <div className="lg:col-span-5 bg-slate-50/90 rounded-2xl p-4 sm:p-5 border border-slate-200/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Est. Group Expense
-                </span>
-                <p className="text-2xl font-black text-slate-900">₹17,800</p>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                  Remaining
-                </span>
-                <p className="text-lg font-black text-emerald-600">+₹2,200</p>
-              </div>
+          {/* Quick Expense & Action Box */}
+          <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3 shrink-0">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                Estimated Budget
+              </span>
+              <span className="text-base font-extrabold text-slate-900">
+                ₹{travelersCount * 4500}
+              </span>
             </div>
-
-            {/* Segmented Progress Bar */}
-            <div className="space-y-1.5">
-              <div className="w-full h-2.5 rounded-full overflow-hidden flex bg-slate-200">
-                <div className="h-full bg-indigo-600 w-[45%]" title="Stay (45%)"></div>
-                <div className="h-full bg-orange-500 w-[28%]" title="Dine (28%)"></div>
-                <div className="h-full bg-teal-500 w-[18%]" title="Play (18%)"></div>
-                <div className="h-full bg-slate-400 w-[9%]" title="Buffer (9%)"></div>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-indigo-600"></span> Stay (45%)
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span> Dine (28%)
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-teal-500"></span> Play (18%)
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-slate-400"></span> Buffer (9%)
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2 flex items-center justify-between text-xs border-t border-slate-200/60 font-semibold">
-              <span className="text-slate-600">₹4,450 / person est.</span>
-              <button
-                onClick={onOpenBill}
-                className="text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 hover:underline cursor-pointer"
-              >
-                <span>Detailed Bill</span>
-                <span>→</span>
-              </button>
-            </div>
+            <button
+              onClick={onOpenBill}
+              className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-2xs"
+            >
+              Split Bill
+            </button>
           </div>
         </div>
       </div>
 
       {/* Day Selector Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold scrollbar-none">
-        {INITIAL_DAYS.map((day, idx) => {
+        {daysData.map((day, idx) => {
           const isActive = selectedDayIndex === idx;
           return (
             <button
-              key={day.dayNumber}
+              key={day.dayNumber || idx}
               onClick={() => setSelectedDayIndex(idx)}
-              className={`px-4 py-2.5 rounded-full whitespace-nowrap transition-all flex items-center gap-2 shadow-2xs cursor-pointer ${
+              className={`px-4 py-2 rounded-xl whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
                 isActive
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
@@ -344,7 +306,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                   isActive ? 'bg-orange-500' : 'bg-slate-300'
                 }`}
               ></span>
-              <span>{day.dateStr}</span>
+              <span>Day {idx + 1} • {day.title || `Day ${idx + 1}`}</span>
             </button>
           );
         })}

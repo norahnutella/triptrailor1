@@ -1,0 +1,6 @@
+{
+  "name": "TripTailor - AI Collaborative Travel Planner",
+  "description": "AI-powered collaborative travel design suite for groups to plan, vote, curate personalized day-by-day itineraries, and manage budgets seamlessly.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

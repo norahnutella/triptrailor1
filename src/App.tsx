@@ -1,28 +1,3 @@
-/**
- * APP ARCHITECTURE OVERVIEW (TripTailor)
- * =========================================================================
- * Purpose:
- *   Root orchestrator for TripTailor collaborative travel design suite.
- *   
- * Capabilities:
- *   1. Screen Routing:
- *      - 'landing': High-conversion marketing presentation & feature showcase
- *      - 'dashboard': Exploration desk, flight trends, live squad feed, wishlist
- *      - 'create': Interactive trip tailor wizard with budget & dining preferences
- *      - 'itinerary': Day-by-day collaborative timeline, route map, pod voting
- * 
- *   2. Authentication & Squad Identity:
- *      - Persistent user session with localStorage backup
- *      - Modal-based Log In & Sign Up with demo account 1-click test drives
- *      - Profile & travel pacing editor with avatar selector & currency switcher
- *      - In-app collaborative notifications drawer
- * 
- *   3. Shared State & Modals:
- *      - Centralized modal union state for invitations, table holds, expense splits,
- *        custom timeline additions, and AI Concierge assistance.
- * =========================================================================
- */
-
 import React, { useState } from 'react';
 import { ViewScreen, ActivityItem, UserProfile, NotificationItem } from './types';
 import { INITIAL_DAY1_ACTIVITIES } from './data/mockData';

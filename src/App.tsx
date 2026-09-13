@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ViewScreen, ActivityItem, UserProfile, NotificationItem, TripData, DayItinerary } from './types';
 import { INITIAL_DAY1_ACTIVITIES, GOA_TRIP } from './data/mockData';
 import {
@@ -10,6 +10,7 @@ import {
   markNotificationsAsRead,
   clearAllNotifications,
 } from './data/authStore';
+import { getUnreadGroupMessagesCount } from './data/groupChatStore';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { DashboardView } from './components/DashboardView';
@@ -19,6 +20,8 @@ import { ProfileView } from './components/ProfileView';
 import { ContactView } from './components/ContactView';
 import { AuthModal } from './components/AuthModal';
 import { ProfileModal } from './components/ProfileModal';
+import { SquadChatDrawer } from './components/SquadChatDrawer';
+import { PrintableItineraryModal } from './components/PrintableItineraryModal';
 import {
   InviteFriendsModal,
   ReserveTableModal,
@@ -55,16 +58,35 @@ export function App() {
   const [currentTrip, setCurrentTrip] = useState<TripData>(GOA_TRIP);
   const [activities, setActivities] = useState<ActivityItem[]>(INITIAL_DAY1_ACTIVITIES);
 
-  // 5. Unified Modal Manager State
+  // 5. Squad Group Chat Drawer & Printable Itinerary States
+  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState<number>(() =>
+    getUnreadGroupMessagesCount(user?.id || 'demo-elena')
+  );
+
+  // 6. Unified Modal Manager State
   const [modalState, setModalState] = useState<ActiveModal>(null);
 
-  // 6. In-App Notification Toast Banner
+  // 7. In-App Notification Toast Banner
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(null), 3400);
   };
+
+  // Sync unread chat count reactively whenever messages are sent/read
+  useEffect(() => {
+    const handleMessageEvent = () => {
+      setUnreadChatCount(getUnreadGroupMessagesCount(user?.id || 'demo-elena'));
+    };
+
+    window.addEventListener('triptailor_group_message', handleMessageEvent);
+    return () => {
+      window.removeEventListener('triptailor_group_message', handleMessageEvent);
+    };
+  }, [user?.id]);
 
   // Create Trip handler with dynamic places
   const handleCreateItinerary = (tripData: {
@@ -121,10 +143,47 @@ export function App() {
     showToast(`Itinerary generated for ${tripData.destination} (${daysCount} days)!`);
   };
 
-  // Activity handlers
-  const handleAddActivity = (newAct: ActivityItem) => {
+  // Activity handlers - Reactive updates to master itinerary and current day
+  const handleAddActivity = (newAct: ActivityItem, targetDay: number = 1) => {
+    setCurrentTrip((prev) => {
+      const updatedDays = prev.days.map((day) => {
+        if (day.dayNumber === targetDay) {
+          return {
+            ...day,
+            activities: [...(day.activities || []), newAct],
+          };
+        }
+        return day;
+      });
+      return {
+        ...prev,
+        days: updatedDays,
+      };
+    });
+
     setActivities((prev) => [...prev, newAct]);
-    showToast(`Added "${newAct.title}" to day itinerary!`);
+    showToast(`Added "${newAct.title}" to Day ${targetDay} itinerary!`);
+  };
+
+  const handleRemoveActivity = (activityId: string, dayNumber: number) => {
+    setCurrentTrip((prev) => {
+      const updatedDays = prev.days.map((day) => {
+        if (day.dayNumber === dayNumber) {
+          return {
+            ...day,
+            activities: (day.activities || []).filter((a) => a.id !== activityId),
+          };
+        }
+        return day;
+      });
+      return {
+        ...prev,
+        days: updatedDays,
+      };
+    });
+
+    setActivities((prev) => prev.filter((a) => a.id !== activityId));
+    showToast('Activity removed from timeline');
   };
 
   const handleNavigate = (screen: ViewScreen, destination?: string) => {
@@ -148,12 +207,14 @@ export function App() {
 
   const handleAuthSuccess = (authenticatedUser: UserProfile, message: string) => {
     setUser(authenticatedUser);
+    setUnreadChatCount(getUnreadGroupMessagesCount(authenticatedUser.id));
     showToast(message);
   };
 
   const handleLogout = () => {
     logoutUser();
     setUser(null);
+    setUnreadChatCount(getUnreadGroupMessagesCount('demo-elena'));
     showToast('Signed out of TripTailor.');
   };
 
@@ -166,6 +227,7 @@ export function App() {
   const handleSwitchUser = (newUser: UserProfile) => {
     setActiveUser(newUser);
     setUser(newUser);
+    setUnreadChatCount(getUnreadGroupMessagesCount(newUser.id));
     showToast(`Switched account to ${newUser.name} (${newUser.role})`);
   };
 
@@ -205,6 +267,8 @@ export function App() {
           user={user}
           onOpenProfile={() => setCurrentScreen('profile')}
           onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
+          onOpenChat={() => setIsChatDrawerOpen(true)}
+          unreadChatCount={unreadChatCount}
           className="hidden lg:flex"
         />
 
@@ -227,6 +291,11 @@ export function App() {
                 setMobileSidebarOpen(false);
                 setAuthModal({ isOpen: true, mode });
               }}
+              onOpenChat={() => {
+                setMobileSidebarOpen(false);
+                setIsChatDrawerOpen(true);
+              }}
+              unreadChatCount={unreadChatCount}
               className="relative z-10 w-72 h-full"
             />
           </div>
@@ -248,6 +317,9 @@ export function App() {
             onMarkNotificationsRead={handleMarkNotificationsRead}
             onClearNotifications={handleClearNotifications}
             onSearchSubmit={handleSearchSubmit}
+            onOpenChat={() => setIsChatDrawerOpen(true)}
+            unreadChatCount={unreadChatCount}
+            onOpenPrint={() => setIsPrintModalOpen(true)}
           />
 
           <main className="flex-1 p-4 sm:p-6 lg:p-8">
@@ -274,8 +346,10 @@ export function App() {
                 onOpenReserve={(restaurant) => setModalState({ type: 'reserve', restaurant })}
                 onOpenBill={() => setModalState({ type: 'bill' })}
                 onOpenAddActivity={(dayNumber) => setModalState({ type: 'addActivity', dayNumber })}
-                activitiesList={activities}
-                setActivitiesList={setActivities}
+                onOpenPrint={() => setIsPrintModalOpen(true)}
+                onOpenChat={() => setIsChatDrawerOpen(true)}
+                unreadChatCount={unreadChatCount}
+                onRemoveActivity={handleRemoveActivity}
                 currentTrip={currentTrip}
                 user={user}
               />
@@ -302,6 +376,28 @@ export function App() {
           </main>
         </div>
       </div>
+
+      {/* Squad Group Chat Drawer */}
+      <SquadChatDrawer
+        isOpen={isChatDrawerOpen}
+        onClose={() => {
+          setIsChatDrawerOpen(false);
+          setUnreadChatCount(getUnreadGroupMessagesCount(user?.id || 'demo-elena'));
+        }}
+        currentUser={user}
+        onSwitchUser={handleSwitchUser}
+        onOpenAddActivity={(day) => {
+          setModalState({ type: 'addActivity', dayNumber: day || 1 });
+        }}
+      />
+
+      {/* Official Printable Itinerary Modal */}
+      <PrintableItineraryModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        trip={currentTrip}
+        user={user}
+      />
 
       {/* Authentication Modal: Log In & Sign Up */}
       <AuthModal
@@ -344,8 +440,9 @@ export function App() {
       <AddActivityModal
         isOpen={modalState?.type === 'addActivity'}
         onClose={() => setModalState(null)}
-        onAddActivity={handleAddActivity}
+        onAdd={handleAddActivity}
         dayNumber={modalState?.type === 'addActivity' ? modalState.dayNumber : 1}
+        totalDays={currentTrip.days.length}
       />
     </div>
   );

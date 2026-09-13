@@ -358,77 +358,195 @@ export const DetailedBillModal: React.FC<DetailedBillModalProps> = ({ isOpen, on
 interface AddActivityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (activity: ActivityItem) => void;
+  onAdd: (activity: ActivityItem, dayNumber: number) => void;
   dayNumber: number;
+  totalDays?: number;
 }
+
+const POPULAR_ACTIVITY_PRESETS = [
+  {
+    title: 'Chapora Fort Sunset & Vantage Point',
+    time: '05:30 PM',
+    duration: '1.5 HRS',
+    cost: 'Free Entry',
+    tag: 'Sightseeing',
+    type: 'visit' as const,
+    description: 'Iconic panoramic cliff-top views overlooking Vagator beach and the Chapora river mouth.',
+    image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&auto=format&fit=crop&q=80',
+  },
+  {
+    title: 'Seafood Feast at Fisherman’s Wharf',
+    time: '01:00 PM',
+    duration: '2.0 HRS',
+    cost: '₹1,500 for group',
+    tag: 'Dining',
+    type: 'dining' as const,
+    description: 'Riverside dining with traditional Goan curries, butter garlic crabs, and live acoustic music.',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
+  },
+  {
+    title: 'Private Catamaran & Dolphin Watching',
+    time: '10:00 AM',
+    duration: '2.5 HRS',
+    cost: '₹3,000 for group',
+    tag: 'Water Sports',
+    type: 'activity' as const,
+    description: 'Scenic coastal cruise with dolphin spotting and swimming in calm emerald coves.',
+    image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80',
+  },
+  {
+    title: 'Fontainhas Latin Quarter Heritage Walk',
+    time: '09:00 AM',
+    duration: '2.0 HRS',
+    cost: '₹400 for guide',
+    tag: 'Sightseeing',
+    type: 'visit' as const,
+    description: 'Pastel-colored Portuguese colonial bungalows, artisan bakeries, and historic azulejo tiles.',
+    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&auto=format&fit=crop&q=80',
+  },
+];
 
 export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   isOpen,
   onClose,
   onAdd,
   dayNumber,
+  totalDays = 4,
 }) => {
+  const [selectedDay, setSelectedDay] = useState(dayNumber);
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('02:00 PM');
   const [duration, setDuration] = useState('1.5 HRS');
   const [cost, setCost] = useState('₹500 for group');
   const [tag, setTag] = useState('Sightseeing');
   const [description, setDescription] = useState('');
+  const [selectedImg, setSelectedImg] = useState('https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&auto=format&fit=crop&q=80');
+
+  // Update selected day whenever dayNumber prop changes
+  React.useEffect(() => {
+    setSelectedDay(dayNumber);
+  }, [dayNumber]);
 
   if (!isOpen) return null;
 
+  const handleApplyPreset = (preset: typeof POPULAR_ACTIVITY_PRESETS[0]) => {
+    setTitle(preset.title);
+    setTime(preset.time);
+    setDuration(preset.duration);
+    setCost(preset.cost);
+    setTag(preset.tag);
+    setDescription(preset.description);
+    setSelectedImg(preset.image);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) return;
+    if (!title.trim()) return;
+
+    let actType: 'visit' | 'beach' | 'dining' | 'activity' = 'activity';
+    if (tag === 'Dining') actType = 'dining';
+    else if (tag === 'Beach Relax') actType = 'beach';
+    else if (tag === 'Sightseeing') actType = 'visit';
 
     const newActivity: ActivityItem = {
       id: `custom-act-${Date.now()}`,
-      orderNumber: 6,
+      orderNumber: 99,
       time,
       duration,
-      title,
-      type: 'activity',
-      description: description || 'Custom scheduled stop curated for the group.',
+      title: title.trim(),
+      type: actType,
+      description: description.trim() || 'Custom scheduled stop curated for the group itinerary.',
       costInfo: cost,
       rating: 4.8,
-      reviewCount: '150',
-      highlightNote: 'Added by Elena',
-      tags: [tag, 'Custom Stop'],
-      image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&auto=format&fit=crop&q=80',
+      reviewCount: '120',
+      highlightNote: 'Added by squad',
+      tags: [tag, 'Squad Curated'],
+      image: selectedImg,
     };
 
-    onAdd(newActivity);
+    onAdd(newActivity, selectedDay);
     onClose();
   };
 
+  const daysOptions = Array.from({ length: Math.max(totalDays, selectedDay, 1) }, (_, i) => i + 1);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-150">
+      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 my-8">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
               <Plus className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">Add Activity to Day {dayNumber}</h3>
-              <p className="text-xs text-slate-500">Insert waypoint into timeline</p>
+              <h3 className="font-bold text-slate-900 text-base">Add Activity to Itinerary</h3>
+              <p className="text-xs text-slate-500">Insert custom waypoint or curated stop into timeline</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="py-4 space-y-3.5">
+        {/* Quick Suggestion Chips */}
+        <div className="pt-3">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+            Quick Curated Suggestions:
+          </span>
+          <div className="grid grid-cols-2 gap-1.5">
+            {POPULAR_ACTIVITY_PRESETS.map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleApplyPreset(preset)}
+                className="p-2 rounded-xl border border-slate-200 hover:border-orange-400 hover:bg-orange-50/50 text-left transition-all cursor-pointer text-xs group"
+              >
+                <div className="font-bold text-slate-900 line-clamp-1 group-hover:text-orange-600">
+                  {preset.title}
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+                  <span>{preset.time}</span>
+                  <span>•</span>
+                  <span>{preset.cost}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="pt-4 space-y-3.5">
+          {/* Day Selector */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Activity or Spot Name</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">
+              Select Day in Itinerary
+            </label>
+            <select
+              value={selectedDay}
+              onChange={(e) => setSelectedDay(Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 text-xs font-bold border border-slate-200 rounded-xl bg-slate-50 text-slate-900 focus:outline-hidden focus:border-orange-500 focus:bg-white cursor-pointer"
+            >
+              {daysOptions.map((d) => (
+                <option key={d} value={d}>
+                  Day {d} Timeline
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">
+              Activity / Stop Name *
+            </label>
             <input
               type="text"
               required
               placeholder="e.g. Chapora Fort Sunset, Curlies Shack, Kayaking"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-hidden focus:border-orange-500"
+              className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-hidden focus:border-orange-500"
             />
           </div>
 
@@ -439,7 +557,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 type="text"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
               />
             </div>
             <div>
@@ -448,7 +566,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 type="text"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
               />
             </div>
           </div>
@@ -460,15 +578,15 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 type="text"
                 value={cost}
                 onChange={(e) => setCost(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Category Tag</label>
+              <label className="text-xs font-semibold text-slate-700 block mb-1">Category</label>
               <select
                 value={tag}
                 onChange={(e) => setTag(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white"
               >
                 <option>Sightseeing</option>
                 <option>Dining</option>
@@ -480,7 +598,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Notes / Description</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Description / Notes</label>
             <textarea
               rows={2}
               placeholder="Why this spot is recommended for the squad..."
@@ -490,20 +608,27 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
             />
           </div>
 
-          <div className="pt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs rounded-xl shadow-xs"
-            >
-              Add to Itinerary
-            </button>
+          <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+            <span className="text-[11px] text-slate-500">
+              Will be added to <strong>Day {selectedDay}</strong>
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add to Itinerary</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

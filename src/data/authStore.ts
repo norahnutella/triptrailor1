@@ -17,6 +17,51 @@ export const DEMO_USERS: (UserProfile & { password: string })[] = [
     preferredCuisines: ['Local Goan', 'Mediterranean', 'Seafood', 'Artisan Cafes'],
   },
   {
+    id: 'user-anu',
+    name: 'Anu Sharma',
+    email: 'anu@triptailor.io',
+    password: 'password123',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=160&auto=format&fit=crop&q=80',
+    role: 'Co-planner',
+    bio: 'Food writer & route planner. Loves hidden street food trails and sunset points.',
+    joinedDate: 'February 2024',
+    tripsCount: 4,
+    savedPlacesCount: 18,
+    currency: '₹ INR',
+    travelPace: 'Balanced',
+    preferredCuisines: ['Street food', 'Seafood', 'Curries', 'Local Goan'],
+  },
+  {
+    id: 'user-megha',
+    name: 'Megha Roy',
+    email: 'megha@triptailor.io',
+    password: 'password123',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=160&auto=format&fit=crop&q=80',
+    role: 'Member',
+    bio: 'Beach lover & water sports enthusiast. Always ready for catamaran sailing and beach shacks.',
+    joinedDate: 'April 2024',
+    tripsCount: 2,
+    savedPlacesCount: 11,
+    currency: '₹ INR',
+    travelPace: 'Relaxed',
+    preferredCuisines: ['Seafood', 'Artisan Cafes', 'Cocktails'],
+  },
+  {
+    id: 'user-sarah',
+    name: 'Sarah Khan',
+    email: 'sarah@triptailor.io',
+    password: 'password123',
+    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=160&auto=format&fit=crop&q=80',
+    role: 'Member',
+    bio: 'Photographer & culture seeker. Excited to visit old churches and Latin quarters.',
+    joinedDate: 'May 2024',
+    tripsCount: 3,
+    savedPlacesCount: 15,
+    currency: '₹ INR',
+    travelPace: 'Balanced',
+    preferredCuisines: ['Portuguese pastries', 'Local Goan', 'Bakery'],
+  },
+  {
     id: 'user-marcus',
     name: 'Marcus Chen',
     email: 'marcus@triptailor.io',
@@ -104,7 +149,19 @@ function getRegisteredUsers(): (UserProfile & { password: string })[] {
       localStorage.setItem(USERS_DB_STORAGE_KEY, JSON.stringify(DEMO_USERS));
       return DEMO_USERS;
     }
-    return JSON.parse(raw);
+    const saved: (UserProfile & { password: string })[] = JSON.parse(raw);
+    // Ensure all demo squad members exist
+    let updated = false;
+    DEMO_USERS.forEach((demo) => {
+      if (!saved.some((u) => u.email.toLowerCase() === demo.email.toLowerCase())) {
+        saved.push(demo);
+        updated = true;
+      }
+    });
+    if (updated) {
+      localStorage.setItem(USERS_DB_STORAGE_KEY, JSON.stringify(saved));
+    }
+    return saved;
   } catch {
     return DEMO_USERS;
   }

@@ -17,6 +17,8 @@ interface SidebarProps {
   user: UserProfile | null;
   onOpenProfile?: () => void;
   onOpenAuth: (mode: 'login' | 'signup') => void;
+  onOpenChat?: () => void;
+  unreadChatCount?: number;
   className?: string;
 }
 
@@ -25,6 +27,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   user,
   onOpenAuth,
+  onOpenChat,
+  unreadChatCount = 0,
   className = '',
 }) => {
   return (
@@ -72,6 +76,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Luggage className="w-4 h-4 shrink-0" />
             <span>Itinerary</span>
           </button>
+
+          {onOpenChat && (
+            <button
+              onClick={onOpenChat}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-orange-50/70 hover:text-orange-700 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-4 h-4 text-orange-600 shrink-0" />
+                <span>Squad Chat</span>
+              </div>
+              {unreadChatCount > 0 && (
+                <span className="px-2 py-0.5 bg-orange-600 text-white text-[10px] font-extrabold rounded-full">
+                  {unreadChatCount}
+                </span>
+              )}
+            </button>
+          )}
 
           <button
             onClick={() => onNavigate('profile')}

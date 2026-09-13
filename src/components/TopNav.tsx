@@ -11,6 +11,8 @@ import {
   Trash2,
   Plus,
   Users,
+  MessageSquare,
+  Printer,
 } from 'lucide-react';
 import { ViewScreen, UserProfile, NotificationItem } from '../types';
 import { DEMO_USERS } from '../data/authStore';
@@ -29,6 +31,9 @@ interface TopNavProps {
   onMarkNotificationsRead: () => void;
   onClearNotifications: () => void;
   onSearchSubmit?: (term: string) => void;
+  onOpenChat?: () => void;
+  unreadChatCount?: number;
+  onOpenPrint?: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
@@ -44,6 +49,9 @@ export const TopNav: React.FC<TopNavProps> = ({
   onMarkNotificationsRead,
   onClearNotifications,
   onSearchSubmit,
+  onOpenChat,
+  unreadChatCount = 0,
+  onOpenPrint,
 }) => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
@@ -111,6 +119,24 @@ export const TopNav: React.FC<TopNavProps> = ({
           >
             <Users className="w-3.5 h-3.5 text-orange-600" />
             <span>Invite Friends</span>
+          </button>
+        )}
+
+        {/* Squad Group Chat Drawer Trigger */}
+        {onOpenChat && (
+          <button
+            onClick={onOpenChat}
+            className="relative p-2 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1.5"
+            aria-label="Squad Chat"
+            title="Open Squad Chat"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="hidden xl:inline text-xs font-bold text-slate-800">Squad Chat</span>
+            {unreadChatCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-orange-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                {unreadChatCount}
+              </span>
+            )}
           </button>
         )}
 
@@ -238,6 +264,19 @@ export const TopNav: React.FC<TopNavProps> = ({
                     <Settings className="w-4 h-4 text-slate-400" />
                     <span>My Itinerary</span>
                   </button>
+
+                  {onOpenPrint && (
+                    <button
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        onOpenPrint();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4 text-orange-600" />
+                      <span>Print Itinerary</span>
+                    </button>
+                  )}
 
                   <button
                     onClick={() => {

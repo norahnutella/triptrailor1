@@ -68,6 +68,21 @@ export interface PodMessage {
   time: string;
 }
 
+// Multi-member collaborative group message
+export interface GroupMessage {
+  id: string;
+  tripId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  senderRole?: string;
+  text: string;
+  timestamp: number;
+  timeFormatted: string;
+  readBy: string[]; // List of user IDs who have seen/read this message
+  tag?: 'itinerary' | 'dining' | 'general' | 'urgent';
+}
+
 // Overall trip specification
 export interface TripData {
   id: string;

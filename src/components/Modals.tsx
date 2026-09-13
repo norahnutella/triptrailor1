@@ -23,14 +23,15 @@ import {
   Plus,
   Compass,
 } from 'lucide-react';
-import { ActivityItem } from '../types';
+import { ActivityItem, UserProfile } from '../types';
 
 interface InviteModalProps {
   isOpen: boolean;
   onClose: () => void;
+  user?: UserProfile | null;
 }
 
-export const InviteFriendsModal: React.FC<InviteModalProps> = ({ isOpen, onClose }) => {
+export const InviteFriendsModal: React.FC<InviteModalProps> = ({ isOpen, onClose, user }) => {
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState('');
   const [invitedEmails, setInvitedEmails] = useState<string[]>(['megha.roy@example.com', 'anu.sharma@example.com', 'sarah.k@example.com']);
@@ -117,7 +118,7 @@ export const InviteFriendsModal: React.FC<InviteModalProps> = ({ isOpen, onClose
             </span>
             <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
               <div className="flex items-center justify-between text-xs py-1.5 px-2 bg-teal-50/70 border border-teal-100 rounded-lg">
-                <span className="font-medium text-slate-800">Elena Vance (You)</span>
+                <span className="font-medium text-slate-800">{user ? `${user.name} (You)` : 'You'}</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-600 text-white px-2 py-0.5 rounded-full">Trip Lead</span>
               </div>
               {invitedEmails.map((em, idx) => (

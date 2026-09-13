@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ViewScreen, ActivityItem, UserProfile, NotificationItem, TripData } from './types';
+import { ViewScreen, ActivityItem, UserProfile, NotificationItem, TripData, DayItinerary } from './types';
 import { INITIAL_DAY1_ACTIVITIES, GOA_TRIP } from './data/mockData';
 import {
   getActiveUser,
@@ -12,10 +12,11 @@ import {
 } from './data/authStore';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
-import { LandingView } from './components/LandingView';
 import { DashboardView } from './components/DashboardView';
 import { TripCustomizerView } from './components/TripCustomizerView';
 import { ItineraryView } from './components/ItineraryView';
+import { ProfileView } from './components/ProfileView';
+import { ContactView } from './components/ContactView';
 import { AuthModal } from './components/AuthModal';
 import { ProfileModal } from './components/ProfileModal';
 import {
@@ -23,7 +24,6 @@ import {
   ReserveTableModal,
   DetailedBillModal,
   AddActivityModal,
-  AiConciergeModal,
 } from './components/Modals';
 
 // Modal state union for type-safe dialog handling
@@ -32,12 +32,12 @@ type ActiveModal =
   | { type: 'reserve'; restaurant: string }
   | { type: 'bill' }
   | { type: 'addActivity'; dayNumber: number }
-  | { type: 'concierge' }
   | null;
 
 export function App() {
   // 1. Navigation State
-  const [currentScreen, setCurrentScreen] = useState<ViewScreen>('itinerary');
+  const [currentScreen, setCurrentScreen] = useState<ViewScreen>('dashboard');
+  const [selectedDestination, setSelectedDestination] = useState<string>('Goa, India');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // 2. Authentication & User Profile State
@@ -73,51 +73,52 @@ export function App() {
     activities: ActivityItem[];
     travelers: number;
     title: string;
+    daysCount?: number;
   }) => {
     const destShort = tripData.destination.split(',')[0];
+    const daysCount = tripData.daysCount || 4;
+
+    const dayTitles = [
+      `${destShort} Highlights & Landmark Walk`,
+      `Scenic Sights & Coastal Dining`,
+      `Cultural Exploration & Heritage`,
+      `Local Artisans & Sunset Vistas`,
+      `Hidden Gems & Tasting Tour`,
+      `Nature Trek & Relaxation`,
+      `Grand Farewell Celebration`,
+    ];
+
+    const days: DayItinerary[] = [];
+    for (let i = 1; i <= daysCount; i++) {
+      const title = dayTitles[(i - 1) % dayTitles.length];
+      const startIdx = ((i - 1) * 2) % Math.max(1, tripData.activities.length);
+      const dayActs = tripData.activities.slice(startIdx, startIdx + 3);
+      days.push({
+        dayNumber: i,
+        dateStr: `Day ${i} • ${title}`,
+        title,
+        activities: dayActs.length > 0 ? dayActs : tripData.activities.slice(0, 2),
+      });
+    }
+
     const newTrip: TripData = {
       id: `trip-${Date.now()}`,
       title: tripData.title,
       destination: tripData.destination,
       dates: tripData.dates,
-      daysCount: 4,
+      daysCount,
       travelersCount: tripData.travelers,
-      budgetTotal: tripData.travelers * 4500,
-      budgetPerPerson: 4500,
+      budgetTotal: tripData.travelers * (daysCount * 1150),
+      budgetPerPerson: daysCount * 1150,
       budgetTier: 'Moderate',
-      tags: [destShort.toUpperCase(), 'AUTO-GENERATED', 'CURATED SPOTS'],
-      days: [
-        {
-          dayNumber: 1,
-          dateStr: `Day 1 • ${destShort} Highlights`,
-          title: `${destShort} Highlights`,
-          activities: tripData.activities.slice(0, 3),
-        },
-        {
-          dayNumber: 2,
-          dateStr: `Day 2 • Sights & Dining`,
-          title: `Sights & Dining`,
-          activities: tripData.activities.slice(3, 6).length > 0 ? tripData.activities.slice(3, 6) : tripData.activities.slice(0, 2),
-        },
-        {
-          dayNumber: 3,
-          dateStr: `Day 3 • Cultural Trail`,
-          title: `Cultural Exploration`,
-          activities: tripData.activities.slice(1, 3),
-        },
-        {
-          dayNumber: 4,
-          dateStr: `Day 4 • Farewell Sunset`,
-          title: `Sunset & Relaxation`,
-          activities: tripData.activities.slice(0, 2),
-        },
-      ],
+      tags: [destShort.toUpperCase(), `${daysCount} DAYS`, 'CALENDAR CURATED'],
+      days,
     };
 
     setCurrentTrip(newTrip);
-    setActivities(tripData.activities.slice(0, 3));
+    setActivities(days[0].activities);
     setCurrentScreen('itinerary');
-    showToast(`Itinerary generated for ${tripData.destination}!`);
+    showToast(`Itinerary generated for ${tripData.destination} (${daysCount} days)!`);
   };
 
   // Activity handlers
@@ -126,13 +127,25 @@ export function App() {
     showToast(`Added "${newAct.title}" to day itinerary!`);
   };
 
-  const handleNavigate = (screen: ViewScreen) => {
+  const handleNavigate = (screen: ViewScreen, destination?: string) => {
+    if (destination) {
+      setSelectedDestination(destination);
+    }
     setCurrentScreen(screen);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Auth Handlers
+  const handleOpenInvite = () => {
+    if (!user) {
+      setAuthModal({ isOpen: true, mode: 'login' });
+      showToast('Please log in to invite friends to your travel squad.');
+      return;
+    }
+    setModalState({ type: 'invite' });
+  };
+
   const handleAuthSuccess = (authenticatedUser: UserProfile, message: string) => {
     setUser(authenticatedUser);
     showToast(message);
@@ -169,10 +182,8 @@ export function App() {
   };
 
   const handleSearchSubmit = (term: string) => {
-    showToast(`Searching for "${term}" across itineraries & stays...`);
-    if (currentScreen !== 'dashboard' && currentScreen !== 'itinerary') {
-      setCurrentScreen('dashboard');
-    }
+    setSelectedDestination(term);
+    setCurrentScreen('create');
   };
 
   return (
@@ -185,107 +196,112 @@ export function App() {
         </div>
       )}
 
-      {/* Screen 1: Marketing Landing Page */}
-      {currentScreen === 'landing' ? (
-        <LandingView
+      {/* Workspace Shell: Sidebar + Top Navigation Header + Active View */}
+      <div className="flex-1 flex min-h-screen overflow-hidden">
+        {/* Desktop Left Sidebar */}
+        <Sidebar
+          currentScreen={currentScreen}
           onNavigate={handleNavigate}
           user={user}
+          onOpenProfile={() => setCurrentScreen('profile')}
           onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
-          onLogout={handleLogout}
+          className="hidden lg:flex"
         />
-      ) : (
-        /* Workspace Shell: Sidebar + Top Navigation Header + Active View */
-        <div className="flex-1 flex min-h-screen overflow-hidden">
-          {/* Desktop Left Sidebar */}
-          <Sidebar
-            currentScreen={currentScreen}
-            onNavigate={handleNavigate}
-            onOpenConcierge={() => setModalState({ type: 'concierge' })}
-            user={user}
-            onOpenProfile={() => setProfileModalOpen(true)}
-            onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
-            className="hidden lg:flex"
-          />
 
-          {/* Mobile Sidebar Drawer */}
-          {mobileSidebarOpen && (
-            <div className="fixed inset-0 z-50 flex lg:hidden">
-              <div
-                className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
-                onClick={() => setMobileSidebarOpen(false)}
-              />
-              <Sidebar
-                currentScreen={currentScreen}
-                onNavigate={handleNavigate}
-                onOpenConcierge={() => {
-                  setMobileSidebarOpen(false);
-                  setModalState({ type: 'concierge' });
-                }}
-                user={user}
-                onOpenProfile={() => {
-                  setMobileSidebarOpen(false);
-                  setProfileModalOpen(true);
-                }}
-                onOpenAuth={(mode) => {
-                  setMobileSidebarOpen(false);
-                  setAuthModal({ isOpen: true, mode });
-                }}
-                className="relative z-10 w-72 h-full"
-              />
-            </div>
-          )}
-
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-            <TopNav
+        {/* Mobile Sidebar Drawer */}
+        {mobileSidebarOpen && (
+          <div className="fixed inset-0 z-50 flex lg:hidden">
+            <div
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+            <Sidebar
               currentScreen={currentScreen}
               onNavigate={handleNavigate}
-              onOpenInvite={() => setModalState({ type: 'invite' })}
-              onToggleSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
               user={user}
-              onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
-              onOpenProfile={() => setProfileModalOpen(true)}
-              onLogout={handleLogout}
-              onSwitchUser={handleSwitchUser}
-              notifications={notifications}
-              onMarkNotificationsRead={handleMarkNotificationsRead}
-              onClearNotifications={handleClearNotifications}
-              onSearchSubmit={handleSearchSubmit}
+              onOpenProfile={() => {
+                setMobileSidebarOpen(false);
+                setCurrentScreen('profile');
+              }}
+              onOpenAuth={(mode) => {
+                setMobileSidebarOpen(false);
+                setAuthModal({ isOpen: true, mode });
+              }}
+              className="relative z-10 w-72 h-full"
             />
-
-            <main className="flex-1 p-4 sm:p-6 lg:p-8">
-              {currentScreen === 'dashboard' && (
-                <DashboardView
-                  onNavigate={handleNavigate}
-                  onOpenConcierge={() => setModalState({ type: 'concierge' })}
-                  user={user}
-                />
-              )}
-
-              {currentScreen === 'create' && (
-                <TripCustomizerView
-                  onNavigate={handleNavigate}
-                  onOpenInvite={() => setModalState({ type: 'invite' })}
-                  onCreateItinerary={handleCreateItinerary}
-                />
-              )}
-
-              {currentScreen === 'itinerary' && (
-                <ItineraryView
-                  onNavigate={handleNavigate}
-                  onOpenInvite={() => setModalState({ type: 'invite' })}
-                  onOpenReserve={(restaurant) => setModalState({ type: 'reserve', restaurant })}
-                  onOpenBill={() => setModalState({ type: 'bill' })}
-                  onOpenAddActivity={(dayNumber) => setModalState({ type: 'addActivity', dayNumber })}
-                  activitiesList={activities}
-                  setActivitiesList={setActivities}
-                  currentTrip={currentTrip}
-                />
-              )}
-            </main>
           </div>
+        )}
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+          <TopNav
+            currentScreen={currentScreen}
+            onNavigate={handleNavigate}
+            onOpenInvite={handleOpenInvite}
+            onToggleSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+            user={user}
+            onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
+            onOpenProfile={() => setCurrentScreen('profile')}
+            onLogout={handleLogout}
+            onSwitchUser={handleSwitchUser}
+            notifications={notifications}
+            onMarkNotificationsRead={handleMarkNotificationsRead}
+            onClearNotifications={handleClearNotifications}
+            onSearchSubmit={handleSearchSubmit}
+          />
+
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+            {currentScreen === 'dashboard' && (
+              <DashboardView
+                onNavigate={handleNavigate}
+                user={user}
+              />
+            )}
+
+            {currentScreen === 'create' && (
+              <TripCustomizerView
+                onNavigate={handleNavigate}
+                onOpenInvite={handleOpenInvite}
+                onCreateItinerary={handleCreateItinerary}
+                initialDestination={selectedDestination}
+              />
+            )}
+
+            {currentScreen === 'itinerary' && (
+              <ItineraryView
+                onNavigate={handleNavigate}
+                onOpenInvite={handleOpenInvite}
+                onOpenReserve={(restaurant) => setModalState({ type: 'reserve', restaurant })}
+                onOpenBill={() => setModalState({ type: 'bill' })}
+                onOpenAddActivity={(dayNumber) => setModalState({ type: 'addActivity', dayNumber })}
+                activitiesList={activities}
+                setActivitiesList={setActivities}
+                currentTrip={currentTrip}
+                user={user}
+              />
+            )}
+
+            {currentScreen === 'profile' && (
+              <ProfileView
+                onNavigate={handleNavigate}
+                user={user}
+                onUpdateUser={handleUpdateUser}
+                onLogout={handleLogout}
+                onSwitchUser={handleSwitchUser}
+                onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
+                showToast={showToast}
+              />
+            )}
+
+            {currentScreen === 'contact' && (
+              <ContactView
+                onNavigate={handleNavigate}
+                user={user}
+              />
+            )}
+          </main>
         </div>
-      )}
+      </div>
 
       {/* Authentication Modal: Log In & Sign Up */}
       <AuthModal
@@ -311,6 +327,7 @@ export function App() {
       <InviteFriendsModal
         isOpen={modalState?.type === 'invite'}
         onClose={() => setModalState(null)}
+        user={user}
       />
 
       <ReserveTableModal
@@ -329,16 +346,6 @@ export function App() {
         onClose={() => setModalState(null)}
         onAddActivity={handleAddActivity}
         dayNumber={modalState?.type === 'addActivity' ? modalState.dayNumber : 1}
-      />
-
-      <AiConciergeModal
-        isOpen={modalState?.type === 'concierge'}
-        onClose={() => setModalState(null)}
-        onApplySuggestion={(suggestion) => {
-          showToast(`Applied AI suggestion: "${suggestion}"`);
-          setModalState(null);
-          setCurrentScreen('itinerary');
-        }}
       />
     </div>
   );

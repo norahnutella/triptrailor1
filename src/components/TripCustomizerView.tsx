@@ -1,15 +1,3 @@
-/**
- * TRIP CUSTOMIZER VIEW (Simplified & Place Auto-Generation)
- * =========================================================================
- * Purpose:
- *   A friendly, clean, and simple trip builder.
- *   - Automatically generates places & attractions for whatever destination
- *     the user types or selects.
- *   - Allows travelers to toggle, add custom places, and pick their trip pace.
- *   - Generates a real day-by-day itinerary on submission.
- * =========================================================================
- */
-
 import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
@@ -22,8 +10,10 @@ import {
   RotateCw,
   Clock,
   ArrowRight,
-  Trash2,
   Compass,
+  Search,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { ViewScreen, ActivityItem } from '../types';
 import {
@@ -31,6 +21,7 @@ import {
   generatePlacesForDestination,
   buildItineraryFromPlaces,
 } from '../data/placesGenerator';
+import { CalendarDatePicker, DateRangeSelection } from './CalendarDatePicker';
 
 interface TripCustomizerViewProps {
   onNavigate: (screen: ViewScreen) => void;
@@ -41,7 +32,9 @@ interface TripCustomizerViewProps {
     activities: ActivityItem[];
     travelers: number;
     title: string;
+    daysCount?: number;
   }) => void;
+  initialDestination?: string;
 }
 
 const POPULAR_DESTINATIONS = [
@@ -57,31 +50,76 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
   onNavigate,
   onOpenInvite,
   onCreateItinerary,
+  initialDestination = 'Goa, India',
 }) => {
-  // 1. Destination State
-  const [destination, setDestination] = useState('Goa, India');
-  const [travelSchedule, setTravelSchedule] = useState('12 Oct 2025 – 15 Oct 2025');
+  // 1. Text input state (typing in this field does NOT automatically generate places)
+  const [destinationInput, setDestinationInput] = useState(initialDestination);
+
+  // 2. The destination for which places have actually been generated via "Search"
+  const [searchedDestination, setSearchedDestination] = useState(initialDestination);
+
+  // 3. Travel schedule & group size
+  const [travelSchedule, setTravelSchedule] = useState('12 Oct – 16 Oct 2025');
+  const [tripDaysCount, setTripDaysCount] = useState(5);
+  const [showCalendar, setShowCalendar] = useState(true);
   const [travelers, setTravelers] = useState(4);
   const [pacing, setPacing] = useState<'Relaxed' | 'Balanced' | 'Fast'>('Balanced');
 
-  // 2. Auto-Generated Places State
+  // 4. Generated Places State (generated ONLY on pressing the Search button)
   const [places, setPlaces] = useState<GeneratedPlace[]>(() =>
-    generatePlacesForDestination('Goa, India')
+    generatePlacesForDestination(initialDestination)
   );
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchNotification, setSearchNotification] = useState<string | null>(null);
 
-  // 3. Custom Spot Inline Input
+  // 5. Custom Spot Inline Input
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customCategory, setCustomCategory] = useState<'Sightseeing' | 'Food & Dining' | 'Beach' | 'Nature' | 'Activity'>('Sightseeing');
 
-  // 4. Loading indicator during itinerary generation
-  const [isGenerating, setIsGenerating] = useState(false);
+  // 6. Loading indicator during itinerary generation
+  const [isGeneratingItinerary, setIsGeneratingItinerary] = useState(false);
 
-  // Automatically generate places whenever destination changes
-  const handleDestinationChange = (newDest: string) => {
-    setDestination(newDest);
-    const newPlaces = generatePlacesForDestination(newDest);
-    setPlaces(newPlaces);
+  // Sync if initialDestination prop changes
+  useEffect(() => {
+    if (initialDestination && initialDestination !== searchedDestination) {
+      setDestinationInput(initialDestination);
+      executeSearch(initialDestination);
+    }
+  }, [initialDestination]);
+
+  const showNotification = (msg: string) => {
+    setSearchNotification(msg);
+    setTimeout(() => setSearchNotification(null), 3000);
+  };
+
+  /**
+   * CRITICAL USER DIRECTIVE:
+   * Only generate ideas for a place on pressing the "search" button!
+   */
+  const executeSearch = (targetDestination: string) => {
+    const trimmed = targetDestination.trim();
+    if (!trimmed) return;
+
+    setIsSearching(true);
+
+    // Simulate clean, responsive feedback
+    setTimeout(() => {
+      const generated = generatePlacesForDestination(trimmed);
+      setPlaces(generated);
+      setSearchedDestination(trimmed);
+      setIsSearching(false);
+      showNotification(`Generated ${generated.length} place ideas for ${trimmed}`);
+    }, 350);
+  };
+
+  const handleSearchClick = () => {
+    executeSearch(destinationInput);
+  };
+
+  const handleQuickDestinationClick = (destName: string) => {
+    setDestinationInput(destName);
+    executeSearch(destName);
   };
 
   // Toggle selection of a place
@@ -91,10 +129,9 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
     );
   };
 
-  // Regenerate/shuffle places
+  // Regenerate/shuffle places for currently searched destination
   const handleRefreshPlaces = () => {
-    const fresh = generatePlacesForDestination(destination);
-    setPlaces(fresh);
+    executeSearch(searchedDestination);
   };
 
   // Add custom spot
@@ -106,7 +143,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
       id: `custom-${Date.now()}`,
       name: customName.trim(),
       category: customCategory,
-      description: `Custom activity added for ${destination}.`,
+      description: `Custom activity added for ${searchedDestination}.`,
       duration: '2.0 hrs',
       estCost: 'Free',
       rating: 5.0,
@@ -118,151 +155,236 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
     setPlaces((prev) => [newSpot, ...prev]);
     setCustomName('');
     setIsAddingCustom(false);
+    showNotification(`Added custom stop: "${newSpot.name}"`);
   };
 
   const selectedPlaces = places.filter((p) => p.selected);
 
   // Final submission: build itinerary and open
   const handleCreateTrip = () => {
-    setIsGenerating(true);
+    setIsGeneratingItinerary(true);
     setTimeout(() => {
-      setIsGenerating(false);
-      const activities = buildItineraryFromPlaces(destination, selectedPlaces);
+      setIsGeneratingItinerary(false);
+      const activities = buildItineraryFromPlaces(searchedDestination, selectedPlaces);
       onCreateItinerary({
-        destination,
+        destination: searchedDestination,
         dates: travelSchedule,
         activities,
         travelers,
-        title: `Your ${destination.split(',')[0]} Trip`,
+        title: `Your ${searchedDestination.split(',')[0]} Trip`,
+        daysCount: tripDaysCount,
       });
-    }, 800);
+    }, 700);
   };
+
+  const hasUnsearchedChanges =
+    destinationInput.trim().toLowerCase() !== searchedDestination.trim().toLowerCase();
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
-      {/* Simple, Friendly Header */}
+      {/* Toast Notification */}
+      {searchNotification && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in">
+          <Check className="w-4 h-4 text-emerald-400" />
+          <span>{searchNotification}</span>
+        </div>
+      )}
+
+      {/* Simple Header */}
       <div className="text-center space-y-2 pt-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-bold">
           <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-          <span>Easy Trip Planner</span>
+          <span>Trip Builder</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Plan your next adventure
+          Plan Your Next Journey
         </h1>
         <p className="text-sm text-slate-600 max-w-lg mx-auto">
-          Choose a destination and we'll automatically generate the best spots to visit.
+          Type any destination and press <strong>Search</strong> to generate sights, dining, and activities.
         </p>
       </div>
 
-      {/* Step 1: Destination & Dates Card */}
+      {/* Step 1: Destination Search Bar & Details */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5">
         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <MapPin className="w-4 h-4 text-orange-600" />
-          <span>1. Where and when are you traveling?</span>
+          <span>1. Where do you want to go?</span>
         </h2>
 
-        {/* Destination input + quick chips */}
+        {/* Destination Input & Dedicated Search Button */}
         <div className="space-y-3">
-          <div className="relative">
-            <input
-              type="text"
-              value={destination}
-              onChange={(e) => handleDestinationChange(e.target.value)}
-              placeholder="e.g. Goa, Kyoto, Paris, Bali..."
-              className="w-full pl-4 pr-32 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-hidden focus:border-orange-500 focus:bg-white transition-colors"
-            />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="relative flex-1">
+              <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={destinationInput}
+                onChange={(e) => setDestinationInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearchClick();
+                  }
+                }}
+                placeholder="Enter destination (e.g. Kyoto, Bali, Goa, Paris, Rome)..."
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:outline-hidden focus:border-orange-500 focus:bg-white transition-colors"
+              />
+            </div>
+
+            {/* Dedicated Search Button */}
             <button
-              onClick={handleRefreshPlaces}
-              className="absolute right-2 top-2 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+              type="button"
+              onClick={handleSearchClick}
+              disabled={isSearching || !destinationInput.trim()}
+              className="px-6 py-3 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs shrink-0"
+              title="Press to generate ideas for this place"
             >
-              <RotateCw className="w-3 h-3 text-slate-500" />
-              <span>Generate</span>
+              {isSearching ? (
+                <RotateCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+              <span>{isSearching ? 'Searching...' : 'Search'}</span>
             </button>
           </div>
 
-          {/* Quick pills */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">Popular:</span>
-            {POPULAR_DESTINATIONS.map((dest) => (
+          {/* Prompt when user typed something different but hasn't searched yet */}
+          {hasUnsearchedChanges && destinationInput.trim().length > 0 && (
+            <div className="flex items-center justify-between p-3 rounded-xl bg-orange-50/80 border border-orange-200 text-xs text-orange-950 animate-in fade-in">
+              <div className="flex items-center gap-2 min-w-0">
+                <Search className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                <span className="truncate font-medium">
+                  Press <strong>Search</strong> to generate ideas for <strong>"{destinationInput.trim()}"</strong>
+                </span>
+              </div>
               <button
-                key={dest.name}
                 type="button"
-                onClick={() => handleDestinationChange(dest.name)}
-                className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                  destination.toLowerCase().includes(dest.name.split(',')[0].toLowerCase())
-                    ? 'bg-orange-50 border-orange-300 text-orange-800'
-                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                }`}
+                onClick={handleSearchClick}
+                className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-colors cursor-pointer shrink-0 ml-2"
               >
-                {dest.label}
+                Search Now
               </button>
-            ))}
+            </div>
+          )}
+
+          {/* Quick Popular Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-xs font-semibold text-slate-500">Popular suggestions:</span>
+            {POPULAR_DESTINATIONS.map((dest) => {
+              const isCurrent =
+                searchedDestination.toLowerCase().includes(dest.name.split(',')[0].toLowerCase());
+              return (
+                <button
+                  key={dest.name}
+                  type="button"
+                  onClick={() => handleQuickDestinationClick(dest.name)}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+                    isCurrent
+                      ? 'bg-orange-50 border-orange-300 text-orange-800'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  {dest.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Dates & Travelers */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-slate-500" />
-              <span>Travel Dates</span>
-            </label>
-            <input
-              type="text"
-              value={travelSchedule}
-              onChange={(e) => setTravelSchedule(e.target.value)}
-              placeholder="e.g. 12 Oct – 15 Oct 2025"
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:border-orange-500 focus:bg-white"
-            />
-          </div>
+        {/* Travel Dates & Group Size */}
+        <div className="space-y-4 pt-3 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                <span>Travel Dates & Schedule</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-900 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                  {travelSchedule}
+                </span>
+                <span className="text-[11px] font-bold bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full">
+                  {tripDaysCount} {tripDaysCount === 1 ? 'Day' : 'Days'}
+                </span>
+              </div>
+            </div>
 
-          <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-slate-500" />
-              <span>Group Size</span>
-            </label>
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 w-fit">
-              <button
-                type="button"
-                onClick={() => setTravelers(Math.max(1, travelers - 1))}
-                className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-700 font-bold cursor-pointer"
-              >
-                <Minus className="w-3 h-3" />
-              </button>
-              <span className="text-xs font-bold text-slate-800 min-w-[70px] text-center">
-                {travelers} {travelers === 1 ? 'Traveler' : 'Travelers'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setTravelers(travelers + 1)}
-                className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-700 font-bold cursor-pointer"
-              >
-                <Plus className="w-3 h-3" />
-              </button>
+            <div className="flex items-center gap-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Travelers</span>
+                </label>
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 w-fit">
+                  <button
+                    type="button"
+                    onClick={() => setTravelers(Math.max(1, travelers - 1))}
+                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-700 font-bold cursor-pointer"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="text-xs font-bold text-slate-800 min-w-[65px] text-center">
+                    {travelers} {travelers === 1 ? 'Traveler' : 'Travelers'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setTravelers(travelers + 1)}
+                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100 text-slate-700 font-bold cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="self-end">
+                <button
+                  type="button"
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                  <span>{showCalendar ? 'Hide Calendar' : 'Change Dates'}</span>
+                  {showCalendar ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Interactive Visual Calendar */}
+          {showCalendar && (
+            <div className="pt-2 animate-in fade-in duration-200">
+              <CalendarDatePicker
+                onChange={(selection: DateRangeSelection) => {
+                  setTravelSchedule(selection.formattedRange);
+                  setTripDaysCount(selection.daysCount);
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Step 2: Auto-Generated Places (The Star Feature!) */}
+      {/* Step 2: Generated Ideas & Places (Generated on Search) */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div>
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Compass className="w-4 h-4 text-orange-600" />
-              <span>2. Auto-generated places for {destination}</span>
+              <span>2. Ideas & places for {searchedDestination}</span>
             </h2>
             <p className="text-xs text-slate-500">
-              We selected {places.length} top spots. Click to include or remove them from your schedule.
+              {places.length} curated spots generated. Click any card to include or exclude it from your itinerary.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefreshPlaces}
+              disabled={isSearching}
               className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+              title="Shuffle suggestions for this destination"
             >
-              <RotateCw className="w-3 h-3 text-slate-500" />
+              <RotateCw className={`w-3 h-3 text-slate-500 ${isSearching ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
             </button>
             <button
@@ -284,7 +406,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
                 type="text"
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
-                placeholder="e.g. Grandma's Secret Bakery, Sunset Point"
+                placeholder="e.g. Old Town Secret Bakery, Sunset Point"
                 className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-hidden focus:border-orange-500"
               />
               <select
@@ -315,75 +437,106 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
           </form>
         )}
 
-        {/* Places Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {places.map((place) => (
-            <div
-              key={place.id}
-              onClick={() => togglePlace(place.id)}
-              className={`group relative rounded-xl border p-3 flex flex-col justify-between transition-all cursor-pointer ${
-                place.selected
-                  ? 'bg-white border-orange-400 ring-2 ring-orange-400/20 shadow-xs'
-                  : 'bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-100 hover:bg-white'
-              }`}
+        {/* Loading skeleton when searching */}
+        {isSearching ? (
+          <div className="p-12 text-center bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+            <RotateCw className="w-6 h-6 text-orange-600 animate-spin mx-auto" />
+            <h4 className="text-sm font-bold text-slate-800">
+              Generating ideas for {destinationInput.trim()}...
+            </h4>
+            <p className="text-xs text-slate-500">
+              Finding highlights, local dining, and top attractions.
+            </p>
+          </div>
+        ) : places.length === 0 ? (
+          <div className="p-12 text-center bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+            <Search className="w-8 h-8 text-slate-400 mx-auto" />
+            <h4 className="text-sm font-bold text-slate-800">
+              No ideas generated yet
+            </h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Type any city or region in the search box above and press <strong>Search</strong> to generate places.
+            </p>
+            <button
+              onClick={handleSearchClick}
+              className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg"
             >
-              <div className="space-y-2.5">
-                {/* Image and badges */}
-                <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-100">
-                  <img
-                    src={place.image}
-                    alt={place.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-900/80 text-white backdrop-blur-xs">
-                    {place.category}
-                  </span>
-                  <div
-                    className={`absolute top-2 right-2 w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
-                      place.selected
-                        ? 'bg-orange-600 text-white'
-                        : 'bg-white/90 text-slate-400 border border-slate-300'
-                    }`}
-                  >
-                    {place.selected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              Search Ideas
+            </button>
+          </div>
+        ) : (
+          /* Places Grid */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {places.map((place) => (
+              <div
+                key={place.id}
+                onClick={() => togglePlace(place.id)}
+                className={`group relative rounded-xl border p-3 flex flex-col justify-between transition-all cursor-pointer ${
+                  place.selected
+                    ? 'bg-white border-orange-400 ring-2 ring-orange-400/20 shadow-xs'
+                    : 'bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-100 hover:bg-white'
+                }`}
+              >
+                <div className="space-y-2.5">
+                  {/* Image and badges */}
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-100">
+                    <img
+                      src={place.image}
+                      alt={place.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-900/80 text-white backdrop-blur-xs">
+                      {place.category}
+                    </span>
+                    <div
+                      className={`absolute top-2 right-2 w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                        place.selected
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-white/90 text-slate-400 border border-slate-300'
+                      }`}
+                    >
+                      {place.selected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-orange-600 transition-colors">
+                      {place.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                      {place.description}
+                    </p>
                   </div>
                 </div>
 
-                {/* Details */}
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-orange-600 transition-colors">
-                    {place.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
-                    {place.description}
-                  </p>
+                {/* Bottom Meta */}
+                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 pt-3 border-t border-slate-100 mt-2">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    <span>{place.duration}</span>
+                  </span>
+                  <span className="text-slate-700 font-bold">{place.estCost}</span>
                 </div>
               </div>
-
-              {/* Bottom Meta */}
-              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 pt-3 border-t border-slate-100 mt-2">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  <span>{place.duration}</span>
-                </span>
-                <span className="text-slate-700 font-bold">{place.estCost}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Selected Summary Pill */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-          <span className="font-semibold text-slate-700">
-            <strong>{selectedPlaces.length}</strong> of {places.length} places selected for your itinerary
-          </span>
-          <button
-            onClick={() => setPlaces(places.map((p) => ({ ...p, selected: true })))}
-            className="text-xs font-bold text-orange-600 hover:text-orange-700 cursor-pointer"
-          >
-            Select All
-          </button>
-        </div>
+        {places.length > 0 && !isSearching && (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <span className="font-semibold text-slate-700">
+              <strong>{selectedPlaces.length}</strong> of {places.length} places selected for your itinerary
+            </span>
+            <button
+              onClick={() => setPlaces(places.map((p) => ({ ...p, selected: true })))}
+              className="text-xs font-bold text-orange-600 hover:text-orange-700 cursor-pointer"
+            >
+              Select All
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Step 3: Simple Trip Pace */}
@@ -434,18 +587,22 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
             Ready to build
           </span>
           <p className="text-sm font-semibold text-slate-200">
-            {selectedPlaces.length} places selected for {destination}
+            {selectedPlaces.length} places selected for {searchedDestination}
           </p>
         </div>
 
         <button
           onClick={handleCreateTrip}
-          disabled={isGenerating || selectedPlaces.length === 0}
+          disabled={isGeneratingItinerary || selectedPlaces.length === 0}
           className="w-full sm:w-auto px-7 py-3.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
         >
-          <Sparkles className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
-          <span>{isGenerating ? 'Building Itinerary...' : `Create Itinerary (${selectedPlaces.length} Places)`}</span>
-          {!isGenerating && <ArrowRight className="w-4 h-4" />}
+          <Sparkles className={`w-4 h-4 ${isGeneratingItinerary ? 'animate-spin' : ''}`} />
+          <span>
+            {isGeneratingItinerary
+              ? 'Building Itinerary...'
+              : `Create Itinerary (${selectedPlaces.length} Places)`}
+          </span>
+          {!isGeneratingItinerary && <ArrowRight className="w-4 h-4" />}
         </button>
       </div>
     </div>

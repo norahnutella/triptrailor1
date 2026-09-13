@@ -13,7 +13,7 @@
  */
 
 // Active view in the application
-export type ViewScreen = 'landing' | 'dashboard' | 'create' | 'itinerary';
+export type ViewScreen = 'dashboard' | 'create' | 'itinerary' | 'profile' | 'contact';
 
 // A single planned activity or waypoint in an itinerary
 export interface ActivityItem {

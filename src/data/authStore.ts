@@ -125,12 +125,9 @@ export function getActiveUser(): UserProfile | null {
     if (raw) {
       return JSON.parse(raw);
     }
-    // Default to Elena Vance for first load
-    const defaultUser = DEMO_USERS[0];
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(defaultUser));
-    return defaultUser;
+    return null;
   } catch {
-    return DEMO_USERS[0];
+    return null;
   }
 }
 

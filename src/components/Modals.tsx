@@ -200,7 +200,7 @@ export const ReserveTableModal: React.FC<ReserveModalProps> = ({
         ) : (
           <div className="py-4 space-y-4">
             <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900">
-              ⚡ <strong>High Demand Window:</strong> Sunset seating between 6:30 PM and 8:00 PM fills fast. Table hold guaranteed for 15 minutes.
+              <strong>High demand window:</strong> Sunset seating between 6:30 PM and 8:00 PM fills fast. Table hold guaranteed for 15 minutes.
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -725,7 +725,7 @@ export const AiConciergeModal: React.FC<AiConciergeModalProps> = ({ isOpen, onCl
             }}
             className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full shrink-0"
           >
-            🌅 Vagator sunset spots
+            Vagator sunset spots
           </button>
           <button
             onClick={() => {
@@ -733,7 +733,7 @@ export const AiConciergeModal: React.FC<AiConciergeModalProps> = ({ isOpen, onCl
             }}
             className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full shrink-0"
           >
-            🤿 Scuba diving feasibility
+            Scuba diving feasibility
           </button>
           <button
             onClick={() => {
@@ -741,7 +741,7 @@ export const AiConciergeModal: React.FC<AiConciergeModalProps> = ({ isOpen, onCl
             }}
             className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full shrink-0"
           >
-            💳 Budget check
+            Budget check
           </button>
         </div>
 

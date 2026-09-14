@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+/* A quiet, nature-led palette keeps the workspace feeling useful rather than busy. */
+@theme {
+  --color-orange-50: #f1f6f3;
+  --color-orange-100: #e3eee7;
+  --color-orange-200: #c9ddcf;
+  --color-orange-300: #a8c7b1;
+  --color-orange-400: #7eaa8c;
+  --color-orange-500: #5f8f70;
+  --color-orange-600: #47775a;
+  --color-orange-700: #365e46;
+  --color-orange-800: #294937;
+  --color-orange-900: #203a2d;
+  --color-orange-950: #14271e;
+
+  --color-slate-50: #f7f9f8;
+  --color-slate-100: #eef2f0;
+  --color-slate-200: #dce5e0;
+  --color-slate-900: #26342d;
+
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.875rem;
+  --radius-3xl: 1rem;
+}
+
+body {
+  background: #f7f9f8;
+}
+
 @media print {
   body {
     background-color: #ffffff !important;

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Sparkles,
   MapPin,
   Calendar,
   Users,
@@ -38,12 +37,12 @@ interface TripCustomizerViewProps {
 }
 
 const POPULAR_DESTINATIONS = [
-  { name: 'Goa, India', label: '🏖️ Goa' },
-  { name: 'Kyoto, Japan', label: '⛩️ Kyoto' },
-  { name: 'Bali, Indonesia', label: '🌴 Bali' },
-  { name: 'Paris, France', label: '🗼 Paris' },
-  { name: 'Tokyo, Japan', label: '🍣 Tokyo' },
-  { name: 'Amalfi Coast, Italy', label: '🍋 Amalfi' },
+  { name: 'Goa, India', label: 'Goa' },
+  { name: 'Kyoto, Japan', label: 'Kyoto' },
+  { name: 'Bali, Indonesia', label: 'Bali' },
+  { name: 'Paris, France', label: 'Paris' },
+  { name: 'Tokyo, Japan', label: 'Tokyo' },
+  { name: 'Amalfi Coast, Italy', label: 'Amalfi' },
 ];
 
 export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
@@ -192,10 +191,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
 
       {/* Simple Header */}
       <div className="text-center space-y-2 pt-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-bold">
-          <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-          <span>Trip Builder</span>
-        </div>
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-700">Trip planner</span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
           Plan Your Next Journey
         </h1>
@@ -549,17 +545,17 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
           {[
             {
               id: 'Relaxed',
-              label: '☕ Relaxed',
+              label: 'Relaxed',
               desc: '1–2 places per day with plenty of free chill time.',
             },
             {
               id: 'Balanced',
-              label: '⚖️ Balanced',
+              label: 'Balanced',
               desc: '2–3 places per day. Good mix of sights & relaxing.',
             },
             {
               id: 'Fast',
-              label: '⚡ Active',
+              label: 'Active',
               desc: '3–4 places per day to see as much as possible.',
             },
           ].map((item) => (
@@ -581,7 +577,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
       </div>
 
       {/* Final Action Button */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900 text-white shadow-lg">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900 text-white">
         <div className="text-center sm:text-left">
           <span className="text-xs font-bold text-orange-400 block uppercase tracking-wider">
             Ready to build
@@ -596,7 +592,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
           disabled={isGeneratingItinerary || selectedPlaces.length === 0}
           className="w-full sm:w-auto px-7 py-3.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
         >
-          <Sparkles className={`w-4 h-4 ${isGeneratingItinerary ? 'animate-spin' : ''}`} />
+          <Compass className={`w-4 h-4 ${isGeneratingItinerary ? 'animate-spin' : ''}`} />
           <span>
             {isGeneratingItinerary
               ? 'Building Itinerary...'

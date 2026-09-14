@@ -231,7 +231,7 @@ export const PrintableItineraryModal: React.FC<PrintableItineraryModalProps> = (
 
                           {act.transitAfter && (
                             <div className="pl-[78px] text-[11px] text-slate-400 italic pt-1 flex items-center gap-1">
-                              <span>🚗 {act.transitAfter.label}</span>
+                              <span>{act.transitAfter.label}</span>
                             </div>
                           )}
                         </div>

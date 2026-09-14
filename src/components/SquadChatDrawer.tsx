@@ -344,10 +344,10 @@ export const SquadChatDrawer: React.FC<SquadChatDrawerProps> = ({
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {[
-              { text: "Just added a new stop to our Day itinerary!", tag: 'itinerary' as const, label: '📍 Added stop' },
-              { text: "Shall we vote on tonight's dinner spot?", tag: 'dining' as const, label: '🍽️ Vote dinner' },
-              { text: "Running 15 minutes behind schedule!", tag: 'urgent' as const, label: '⏱️ Running late' },
-              { text: "Ready to leave the hotel whenever you guys are!", tag: 'general' as const, label: '👋 Ready' },
+              { text: "Just added a new stop to our Day itinerary!", tag: 'itinerary' as const, label: 'Added stop' },
+              { text: "Shall we vote on tonight's dinner spot?", tag: 'dining' as const, label: 'Vote dinner' },
+              { text: "Running 15 minutes behind schedule!", tag: 'urgent' as const, label: 'Running late' },
+              { text: "Ready to leave the hotel whenever you guys are!", tag: 'general' as const, label: 'Ready' },
             ].map((p, idx) => (
               <button
                 key={idx}

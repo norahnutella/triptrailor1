@@ -34,17 +34,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       id="workspace-sidebar"
-      className={`w-60 bg-white border-r border-slate-200 flex flex-col justify-between p-4 shrink-0 select-none ${className}`}
+      className={`w-56 bg-white border-r border-slate-200 flex flex-col justify-between p-3 shrink-0 select-none ${className}`}
     >
       {/* Brand & Navigation */}
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Brand Lockup */}
         <div
           onClick={() => onNavigate('dashboard')}
           className="flex items-center gap-2.5 cursor-pointer py-1 px-2"
         >
-          <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs">
-            <Compass className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white">
+            <Compass className="w-4 h-4" />
           </div>
           <span className="font-extrabold text-slate-900 text-lg tracking-tight">
             TripTailor
@@ -57,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => onNavigate('dashboard')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
               currentScreen === 'dashboard'
-                ? 'bg-slate-900 text-white'
+                ? 'bg-orange-50 text-orange-900'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
@@ -69,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => onNavigate('itinerary')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
               currentScreen === 'itinerary'
-                ? 'bg-slate-900 text-white'
+                ? 'bg-orange-50 text-orange-900'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => onNavigate('profile')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
               currentScreen === 'profile'
-                ? 'bg-slate-900 text-white'
+                ? 'bg-orange-50 text-orange-900'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
@@ -110,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => onNavigate('contact')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
               currentScreen === 'contact'
-                ? 'bg-slate-900 text-white'
+                ? 'bg-orange-50 text-orange-900'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
@@ -123,7 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onNavigate('create')}
               className={`w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer shadow-xs ${
                 currentScreen === 'create'
-                  ? 'bg-orange-600 text-white ring-2 ring-orange-500/30'
+                  ? 'bg-orange-600 text-white'
                   : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
               }`}
             >

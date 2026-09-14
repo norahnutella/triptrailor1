@@ -426,13 +426,13 @@ export const DESTINATION_PLACES: Record<string, Omit<GeneratedPlace, 'selected'>
 };
 
 // Generic generator for ANY destination entered by the user
-export function generatePlacesForDestination(destInput: string): GeneratedPlace[] {
+export function generatePlacesForDestination(destInput: string, targetCount = 6): GeneratedPlace[] {
   const clean = destInput.toLowerCase().trim();
 
   // Match existing presets
   for (const key of Object.keys(DESTINATION_PLACES)) {
     if (clean.includes(key) || key.includes(clean)) {
-      return DESTINATION_PLACES[key].map((p) => ({ ...p, selected: true }));
+      return expandSuggestions(DESTINATION_PLACES[key], destInput, targetCount);
     }
   }
 
@@ -447,7 +447,7 @@ export function generatePlacesForDestination(destInput: string): GeneratedPlace[
     'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80',
   ];
 
-  return [
+  return expandSuggestions([
     {
       id: `gen-${Date.now()}-1`,
       name: `${titleName} Historic Old Town & Plaza`,
@@ -458,7 +458,6 @@ export function generatePlacesForDestination(destInput: string): GeneratedPlace[
       rating: 4.8,
       image: sampleImages[0],
       tags: ['Old Town', 'Historic Landmark'],
-      selected: true,
     },
     {
       id: `gen-${Date.now()}-2`,
@@ -470,7 +469,6 @@ export function generatePlacesForDestination(destInput: string): GeneratedPlace[
       rating: 4.7,
       image: sampleImages[1],
       tags: ['Panoramic View', 'Photo Spot'],
-      selected: true,
     },
     {
       id: `gen-${Date.now()}-3`,
@@ -482,7 +480,6 @@ export function generatePlacesForDestination(destInput: string): GeneratedPlace[
       rating: 4.9,
       image: sampleImages[2],
       tags: ['Local Food', 'Market'],
-      selected: true,
     },
     {
       id: `gen-${Date.now()}-4`,
@@ -494,7 +491,6 @@ export function generatePlacesForDestination(destInput: string): GeneratedPlace[
       rating: 4.6,
       image: sampleImages[3],
       tags: ['Arts', 'Culture'],
-      selected: true,
     },
     {
       id: `gen-${Date.now()}-5`,
@@ -506,7 +502,6 @@ export function generatePlacesForDestination(destInput: string): GeneratedPlace[
       rating: 4.8,
       image: sampleImages[4],
       tags: ['Waterfront', 'Sunset'],
-      selected: true,
     },
     {
       id: `gen-${Date.now()}-6`,
@@ -518,9 +513,38 @@ export function generatePlacesForDestination(destInput: string): GeneratedPlace[
       rating: 4.9,
       image: sampleImages[5],
       tags: ['Dinner', 'Evening Music'],
-      selected: true,
     },
+  ], destInput, targetCount);
+}
+
+function expandSuggestions(
+  basePlaces: Omit<GeneratedPlace, 'selected'>[],
+  destination: string,
+  targetCount: number
+): GeneratedPlace[] {
+  const places = basePlaces.map((place) => ({ ...place, selected: true }));
+  const desiredCount = Math.max(6, targetCount);
+  const name = destination.trim() || 'your destination';
+  const discoveryTemplates: Array<Pick<GeneratedPlace, 'category' | 'duration' | 'estCost' | 'rating' | 'image' | 'tags'> & { name: string; description: string }> = [
+    { category: 'Activity', name: `Hands-on local workshop in ${name}`, description: 'A relaxed, bookable activity that introduces a local craft, skill, or tradition.', duration: '2.0 hrs', estCost: 'Moderate', rating: 4.7, image: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=800&auto=format&fit=crop&q=80', tags: ['Local experience', 'Activity'] },
+    { category: 'Food & Dining', name: `Neighbourhood breakfast spot in ${name}`, description: 'A casual morning food stop chosen for regional flavours and an easy start to the day.', duration: '1.0 hr', estCost: 'Moderate', rating: 4.6, image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80', tags: ['Breakfast', 'Local food'] },
+    { category: 'Culture', name: `Independent gallery and design walk in ${name}`, description: 'A slower cultural stop with local makers, small exhibitions, and neighbourhood character.', duration: '1.5 hrs', estCost: 'Low cost', rating: 4.7, image: 'https://images.unsplash.com/photo-1564399579883-451a5d44ec08?w=800&auto=format&fit=crop&q=80', tags: ['Culture', 'Design'] },
+    { category: 'Nature', name: `Quiet park or scenic trail near ${name}`, description: 'A low-pressure outdoor break for a change of pace between fuller days.', duration: '1.5 hrs', estCost: 'Free', rating: 4.6, image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&auto=format&fit=crop&q=80', tags: ['Nature', 'Slow travel'] },
+    { category: 'Food & Dining', name: `Chef-led dinner recommendation in ${name}`, description: 'An evening food option that balances a memorable meal with the rest of the day’s route.', duration: '2.0 hrs', estCost: 'Moderate', rating: 4.8, image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&auto=format&fit=crop&q=80', tags: ['Dinner', 'Reservation'] },
+    { category: 'Sightseeing', name: `Golden-hour viewpoint in ${name}`, description: 'A scenic late-day stop selected for an unhurried view and a simple finish to the day.', duration: '1.0 hr', estCost: 'Free', rating: 4.7, image: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?w=800&auto=format&fit=crop&q=80', tags: ['Viewpoint', 'Evening'] },
   ];
+
+  for (let index = places.length; index < desiredCount; index += 1) {
+    const template = discoveryTemplates[(index - places.length) % discoveryTemplates.length];
+    places.push({
+      ...template,
+      id: `discovery-${Date.now()}-${index + 1}`,
+      name: `${template.name} · Day ${Math.floor(index / 3) + 1}`,
+      selected: true,
+    });
+  }
+
+  return places;
 }
 
 // Convert selected places into day-by-day ActivityItems

@@ -66,7 +66,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
 
   // 4. Generated Places State (generated ONLY on pressing the Search button)
   const [places, setPlaces] = useState<GeneratedPlace[]>(() =>
-    generatePlacesForDestination(initialDestination)
+    generatePlacesForDestination(initialDestination, tripDaysCount * 3)
   );
   const [isSearching, setIsSearching] = useState(false);
   const [searchNotification, setSearchNotification] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
 
     // Simulate clean, responsive feedback
     setTimeout(() => {
-      const generated = generatePlacesForDestination(trimmed);
+      const generated = generatePlacesForDestination(trimmed, tripDaysCount * 3);
       setPlaces(generated);
       setSearchedDestination(trimmed);
       setIsSearching(false);
@@ -131,6 +131,12 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
   // Regenerate/shuffle places for currently searched destination
   const handleRefreshPlaces = () => {
     executeSearch(searchedDestination);
+  };
+
+  const handleScheduleChange = (selection: DateRangeSelection) => {
+    setTravelSchedule(selection.formattedRange);
+    setTripDaysCount(selection.daysCount);
+    setPlaces(generatePlacesForDestination(searchedDestination, selection.daysCount * 3));
   };
 
   // Add custom spot
@@ -351,8 +357,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
             <div className="pt-2 animate-in fade-in duration-200">
               <CalendarDatePicker
                 onChange={(selection: DateRangeSelection) => {
-                  setTravelSchedule(selection.formattedRange);
-                  setTripDaysCount(selection.daysCount);
+                  handleScheduleChange(selection);
                 }}
               />
             </div>
@@ -369,7 +374,7 @@ export const TripCustomizerView: React.FC<TripCustomizerViewProps> = ({
               <span>2. Ideas & places for {searchedDestination}</span>
             </h2>
             <p className="text-xs text-slate-500">
-              {places.length} curated spots generated. Click any card to include or exclude it from your itinerary.
+              {places.length} varied sights, activities, and food spots for your {tripDaysCount}-day trip. Click any card to include or exclude it.
             </p>
           </div>
 

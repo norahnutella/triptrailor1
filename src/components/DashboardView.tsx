@@ -16,11 +16,13 @@ import { RECENT_DESTINATIONS, SAVED_PLACES } from '../data/mockData';
 interface DashboardViewProps {
   onNavigate: (screen: ViewScreen, initialDestination?: string) => void;
   user?: UserProfile | null;
+  onOpenAuth?: (mode: 'login' | 'signup') => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
   user,
+  onOpenAuth,
 }) => {
   const [destinationInput, setDestinationInput] = useState('');
   const [pinnedPlaces, setPinnedPlaces] = useState<string[]>(['sp-1', 'sp-2', 'sp-3']);
@@ -50,6 +52,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       showToast(`Saved "${placeName}" to wishlist`);
     }
   };
+
+  if (!user) {
+    const facts = [
+      ['Plan with context', 'TripTailor lets you compare places, food stops, and activities before turning them into a day-by-day plan.'],
+      ['Make room for discovery', 'A little unplanned time makes it easier to follow a local recommendation, revisit a favourite place, or simply slow down.'],
+      ['Food shapes a route', 'Adding meal stops early helps create more realistic days and makes neighbourhood exploration feel more natural.'],
+      ['Built around your trip length', 'Suggestions are scaled to the number of days you choose, so a long stay starts with more options to explore.'],
+    ];
+
+    return (
+      <div className="max-w-5xl mx-auto py-4 sm:py-10 space-y-8">
+        <section className="bg-white rounded-2xl border border-slate-200 p-7 sm:p-10 text-center space-y-4">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-700">TripTailor</span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">A quieter way to plan a trip.</h1>
+          <p className="max-w-xl mx-auto text-sm leading-relaxed text-slate-600">
+            Browse the ideas, then sign in when you are ready to build, save, and share an itinerary.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <button onClick={() => onNavigate('create')} className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer">
+              Log in to create a trip
+            </button>
+            <button onClick={() => onOpenAuth?.('signup')} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors cursor-pointer">
+              Sign up
+            </button>
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-base font-bold text-slate-900">A few things worth knowing</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {facts.map(([title, description]) => (
+              <article key={title} className="bg-white border border-slate-200 rounded-xl p-5 space-y-1.5">
+                <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+                <p className="text-xs leading-relaxed text-slate-600">{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">

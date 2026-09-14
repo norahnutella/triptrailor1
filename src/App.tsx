@@ -98,6 +98,11 @@ export function App() {
     title: string;
     daysCount?: number;
   }) => {
+    if (!user) {
+      setAuthModal({ isOpen: true, mode: 'login' });
+      showToast('Please log in or sign up before generating an itinerary.');
+      return;
+    }
     const destShort = tripData.destination.split(',')[0];
     const daysCount = tripData.daysCount || 4;
 
@@ -364,6 +369,7 @@ export function App() {
               <DashboardView
                 onNavigate={handleNavigate}
                 user={user}
+                onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
               />
             )}
 

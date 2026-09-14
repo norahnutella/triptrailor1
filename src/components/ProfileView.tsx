@@ -137,6 +137,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   );
   const [isSaving, setIsSaving] = useState(false);
 
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      showToast('Choose an image file smaller than 5 MB.');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setSelectedAvatar(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+
   const toggleCuisine = (c: string) => {
     if (selectedCuisines.includes(c)) {
       setSelectedCuisines(selectedCuisines.filter((x) => x !== c));
@@ -324,7 +337,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <img src={avUrl} alt={`Avatar ${idx}`} className="w-full h-full object-cover" />
                 </button>
               ))}
+              <label className="w-12 h-12 rounded-xl border border-dashed border-slate-300 hover:border-orange-500 bg-slate-50 hover:bg-orange-50 flex items-center justify-center cursor-pointer transition-colors" title="Upload a photo from your device">
+                <Camera className="w-4 h-4 text-slate-500" />
+                <input type="file" accept="image/*" onChange={handleAvatarUpload} className="sr-only" />
+              </label>
             </div>
+            <p className="mt-2 text-[11px] text-slate-500">Or upload a profile photo from your device (JPG, PNG, or WebP; up to 5 MB).</p>
           </div>
         </div>
 

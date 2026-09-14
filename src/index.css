@@ -2,6 +2,7 @@
 
 /* A quiet, nature-led palette keeps the workspace feeling useful rather than busy. */
 @theme {
+  --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
   --color-orange-50: #f1f6f3;
   --color-orange-100: #e3eee7;
   --color-orange-200: #c9ddcf;
@@ -26,6 +27,7 @@
 
 body {
   background: #f7f9f8;
+  font-family: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
 }
 
 @media print {

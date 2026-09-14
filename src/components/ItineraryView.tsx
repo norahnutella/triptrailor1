@@ -341,6 +341,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             </div>
 
             {/* Travel Companions & Squad Chat link */}
+            {user && onOpenChat && (
             <div className="pt-2 border-t border-slate-100 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-700">Trip Crew</span>
@@ -365,7 +366,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 </div>
               </div>
 
-              <div
+              <button
+                type="button"
                 onClick={onOpenChat}
                 className="flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-orange-50/50 transition-colors cursor-pointer border border-slate-200/60"
               >
@@ -390,8 +392,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                     {unreadChatCount} New
                   </span>
                 )}
-              </div>
+              </button>
             </div>
+            )}
 
             {/* Print Itinerary CTA Card */}
             {onOpenPrint && (

@@ -149,17 +149,18 @@ export const TopNav: React.FC<TopNavProps> = ({
         </button>
 
         {/* Notifications */}
-        <div className="relative" ref={notifMenuRef}>
-          <button
-            onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
-            className="relative p-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-            aria-label="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full"></span>
-            )}
-          </button>
+        {user && (
+          <div className="relative" ref={notifMenuRef}>
+            <button
+              onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+              className="relative p-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+              aria-label="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full"></span>
+              )}
+            </button>
 
           {notifDropdownOpen && (
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50">
@@ -204,7 +205,8 @@ export const TopNav: React.FC<TopNavProps> = ({
               </div>
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* User Identity */}
         {user ? (

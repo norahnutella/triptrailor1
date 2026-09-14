@@ -267,7 +267,7 @@ export function App() {
           user={user}
           onOpenProfile={() => setCurrentScreen('profile')}
           onOpenAuth={(mode) => setAuthModal({ isOpen: true, mode })}
-          onOpenChat={() => setIsChatDrawerOpen(true)}
+          onOpenChat={user ? () => setIsChatDrawerOpen(true) : undefined}
           unreadChatCount={unreadChatCount}
           className="hidden lg:flex"
         />
@@ -291,10 +291,10 @@ export function App() {
                 setMobileSidebarOpen(false);
                 setAuthModal({ isOpen: true, mode });
               }}
-              onOpenChat={() => {
+              onOpenChat={user ? () => {
                 setMobileSidebarOpen(false);
                 setIsChatDrawerOpen(true);
-              }}
+              } : undefined}
               unreadChatCount={unreadChatCount}
               className="relative z-10 w-72 h-full"
             />
@@ -317,7 +317,7 @@ export function App() {
             onMarkNotificationsRead={handleMarkNotificationsRead}
             onClearNotifications={handleClearNotifications}
             onSearchSubmit={handleSearchSubmit}
-            onOpenChat={() => setIsChatDrawerOpen(true)}
+            onOpenChat={user ? () => setIsChatDrawerOpen(true) : undefined}
             unreadChatCount={unreadChatCount}
             onOpenPrint={() => setIsPrintModalOpen(true)}
           />
@@ -346,8 +346,8 @@ export function App() {
                 onOpenReserve={(restaurant) => setModalState({ type: 'reserve', restaurant })}
                 onOpenBill={() => setModalState({ type: 'bill' })}
                 onOpenAddActivity={(dayNumber) => setModalState({ type: 'addActivity', dayNumber })}
-                onOpenPrint={() => setIsPrintModalOpen(true)}
-                onOpenChat={() => setIsChatDrawerOpen(true)}
+                onOpenPrint={user ? () => setIsPrintModalOpen(true) : undefined}
+                onOpenChat={user ? () => setIsChatDrawerOpen(true) : undefined}
                 unreadChatCount={unreadChatCount}
                 onRemoveActivity={handleRemoveActivity}
                 currentTrip={currentTrip}

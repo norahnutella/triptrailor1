@@ -57,6 +57,7 @@ export function App() {
   // 4. Core Itinerary State: Dynamic timeline items and active trip
   const [currentTrip, setCurrentTrip] = useState<TripData>(GOA_TRIP);
   const [activities, setActivities] = useState<ActivityItem[]>(INITIAL_DAY1_ACTIVITIES);
+  const [isCurrentTripSaved, setIsCurrentTripSaved] = useState(false);
 
   // 5. Squad Group Chat Drawer & Printable Itinerary States
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
@@ -139,6 +140,7 @@ export function App() {
 
     setCurrentTrip(newTrip);
     setActivities(days[0].activities);
+    setIsCurrentTripSaved(false);
     setCurrentScreen('itinerary');
     showToast(`Itinerary generated for ${tripData.destination} (${daysCount} days)!`);
   };
@@ -162,6 +164,7 @@ export function App() {
     });
 
     setActivities((prev) => [...prev, newAct]);
+    setIsCurrentTripSaved(false);
     showToast(`Added "${newAct.title}" to Day ${targetDay} itinerary!`);
   };
 
@@ -183,10 +186,44 @@ export function App() {
     });
 
     setActivities((prev) => prev.filter((a) => a.id !== activityId));
+    setIsCurrentTripSaved(false);
     showToast('Activity removed from timeline');
   };
 
+  const handleRegenerateItinerary = () => {
+    setCurrentTrip((prev) => ({
+      ...prev,
+      days: prev.days.map((day) => {
+        const reordered = day.activities.length > 1
+          ? [...day.activities.slice(1), day.activities[0]]
+          : day.activities;
+        return {
+          ...day,
+          activities: reordered.map((activity, index) => ({ ...activity, orderNumber: index + 1 })),
+        };
+      }),
+    }));
+    setIsCurrentTripSaved(false);
+    showToast('A fresh itinerary order is ready to review.');
+  };
+
+  const handleUpdateTrip = (updates: Pick<TripData, 'title' | 'dates'>) => {
+    setCurrentTrip((prev) => ({ ...prev, ...updates }));
+    setIsCurrentTripSaved(false);
+    showToast('Itinerary details updated.');
+  };
+
+  const handleSaveTrip = () => {
+    setIsCurrentTripSaved(true);
+    showToast('Itinerary saved to your trips.');
+  };
+
   const handleNavigate = (screen: ViewScreen, destination?: string) => {
+    if (screen === 'create' && !user) {
+      setAuthModal({ isOpen: true, mode: 'login' });
+      showToast('Please log in or sign up before creating a trip.');
+      return;
+    }
     if (destination) {
       setSelectedDestination(destination);
     }
@@ -352,6 +389,10 @@ export function App() {
                 onRemoveActivity={handleRemoveActivity}
                 currentTrip={currentTrip}
                 user={user}
+                onRegenerate={handleRegenerateItinerary}
+                onUpdateTrip={handleUpdateTrip}
+                onSave={handleSaveTrip}
+                isSaved={isCurrentTripSaved}
               />
             )}
 
